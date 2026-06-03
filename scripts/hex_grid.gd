@@ -2,20 +2,26 @@ extends Node3D
 
 signal hex_selected(q: int, r: int, tile_type: String, buildable: bool, has_building: bool)
 signal build_mode_changed(enabled: bool)
+signal wood_changed(amount: int)
+signal message_changed(text: String)
 
 @export var radius: int = 6
 @export var hex_size: float = 1.0
 @export var tile_height: float = 0.08
 @export var generation_seed: int = 12345
+@export var starting_wood: int = 20
+@export var lumberjack_hut_wood_cost: int = 5
 
 var selected_tile: MeshInstance3D
 var selected_material: StandardMaterial3D
 var building_material: StandardMaterial3D
 var tile_materials: Dictionary = {}
 var build_mode: bool = false
+var wood: int = 0
 
 
 func _ready() -> void:
+	wood = starting_wood
 	tile_materials = {
 		"Gras": _make_material(Color(0.22, 0.55, 0.32)),
 		"Wald": _make_material(Color(0.08, 0.32, 0.16)),
@@ -120,6 +126,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		build_mode_changed.emit(build_mode)
 		print("Baumodus: %s" % ("an" if build_mode else "aus"))
 
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+		_add_wood(10)
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_select_tile_under_mouse()
 
@@ -143,8 +152,8 @@ func _select_tile_under_mouse() -> void:
 	var tile := collider.get_parent()
 	if tile is MeshInstance3D and tile.has_meta("q") and tile.has_meta("r"):
 		_set_selected_tile(tile)
-		if build_mode and tile.get_meta("buildable") and not tile.get_meta("has_building"):
-			_place_lumberjack_hut(tile)
+		if build_mode:
+			_try_place_lumberjack_hut(tile)
 
 		hex_selected.emit(
 			tile.get_meta("q"),
@@ -163,6 +172,25 @@ func _set_selected_tile(tile: MeshInstance3D) -> void:
 	selected_tile.material_override = selected_material
 
 
+func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
+	if not tile.get_meta("buildable"):
+		message_changed.emit("Kann hier nicht bauen: Feld ist nicht bebaubar.")
+		return
+
+	if tile.get_meta("has_building"):
+		message_changed.emit("Kann hier nicht bauen: Feld hat bereits ein Gebäude.")
+		return
+
+	if wood < lumberjack_hut_wood_cost:
+		message_changed.emit("Nicht genug Holz. Holzfällerhütte kostet %d Holz." % lumberjack_hut_wood_cost)
+		return
+
+	wood -= lumberjack_hut_wood_cost
+	wood_changed.emit(wood)
+	_place_lumberjack_hut(tile)
+	message_changed.emit("Holzfällerhütte gebaut: -%d Holz." % lumberjack_hut_wood_cost)
+
+
 func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	var marker := MeshInstance3D.new()
 	marker.name = "Holzfaellerhuette"
@@ -176,6 +204,12 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	tile.add_child(marker)
 	tile.set_meta("has_building", true)
 	tile.set_meta("building_name", "Holzfällerhütte")
+
+
+func _add_wood(amount: int) -> void:
+	wood += amount
+	wood_changed.emit(wood)
+	message_changed.emit("+%d Holz erhalten." % amount)
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
