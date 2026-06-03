@@ -25,9 +25,16 @@ light_energy = 2.0
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="CoordinateLabel" type="Label" parent="CanvasLayer"]
+[node name="BuildModeLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 440.0
 offset_bottom = 48.0
+text = "Baumodus: AUS"
+
+[node name="CoordinateLabel" type="Label" parent="CanvasLayer"]
+offset_left = 16.0
+offset_top = 44.0
+offset_right = 760.0
+offset_bottom = 76.0
 text = "Hex: -"
