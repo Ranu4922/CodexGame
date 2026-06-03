@@ -8,12 +8,14 @@ extends Node3D
 @onready var info_label: Label = $CanvasLayer/InfoPanel/InfoLabel
 
 var message_version: int = 0
+var selected_building_name: String = "Holzfällerhütte"
 
 
 func _ready() -> void:
 	hex_grid.hex_selected.connect(_on_hex_selected)
 	hex_grid.selection_cleared.connect(_on_selection_cleared)
 	hex_grid.build_mode_changed.connect(_on_build_mode_changed)
+	hex_grid.selected_building_changed.connect(_on_selected_building_changed)
 	hex_grid.wood_changed.connect(_on_wood_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	_on_build_mode_changed(false)
@@ -64,11 +66,23 @@ func _on_selection_cleared() -> void:
 
 
 func _on_build_mode_changed(enabled: bool) -> void:
-	build_mode_label.text = "Baumodus: %s" % ("AN" if enabled else "AUS")
+	_update_build_mode_label(enabled)
 	build_mode_label.add_theme_color_override(
 		"font_color",
 		Color(0.20, 0.85, 0.25) if enabled else Color(0.95, 0.20, 0.18)
 	)
+
+
+func _on_selected_building_changed(display_name: String) -> void:
+	selected_building_name = display_name
+	_update_build_mode_label(hex_grid.build_mode)
+
+
+func _update_build_mode_label(enabled: bool) -> void:
+	if enabled:
+		build_mode_label.text = "Baumodus: AN (%s)" % selected_building_name
+	else:
+		build_mode_label.text = "Baumodus: AUS"
 
 
 func _on_wood_changed(amount: int) -> void:
