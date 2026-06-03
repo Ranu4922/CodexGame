@@ -3,6 +3,7 @@ extends Node3D
 @onready var hex_grid: Node3D = $HexGrid
 @onready var build_mode_label: Label = $CanvasLayer/BuildModeLabel
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
+@onready var housing_label: Label = $CanvasLayer/HousingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
 @onready var info_label: Label = $CanvasLayer/InfoPanel/InfoLabel
@@ -17,9 +18,11 @@ func _ready() -> void:
 	hex_grid.build_mode_changed.connect(_on_build_mode_changed)
 	hex_grid.selected_building_changed.connect(_on_selected_building_changed)
 	hex_grid.wood_changed.connect(_on_wood_changed)
+	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	_on_build_mode_changed(false)
 	_on_wood_changed(hex_grid.wood)
+	_on_housing_changed(hex_grid.housing_capacity)
 	_on_selection_cleared()
 
 
@@ -87,6 +90,10 @@ func _update_build_mode_label(enabled: bool) -> void:
 
 func _on_wood_changed(amount: int) -> void:
 	resource_label.text = "Holz: %d" % amount
+
+
+func _on_housing_changed(amount: int) -> void:
+	housing_label.text = "Wohnraum: %d" % amount
 
 
 func _on_message_changed(text: String) -> void:
