@@ -1,6 +1,7 @@
 extends Node3D
 
 signal hex_selected(q: int, r: int, tile_type: String, buildable: bool, has_building: bool)
+signal build_mode_changed(enabled: bool)
 
 @export var radius: int = 6
 @export var hex_size: float = 1.0
@@ -116,6 +117,7 @@ func _is_tile_buildable(tile_type: String) -> bool:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
 		build_mode = not build_mode
+		build_mode_changed.emit(build_mode)
 		print("Baumodus: %s" % ("an" if build_mode else "aus"))
 
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
