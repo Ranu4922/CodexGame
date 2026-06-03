@@ -8,11 +8,13 @@ func _ready() -> void:
 	hex_grid.hex_selected.connect(_on_hex_selected)
 
 
-func _on_hex_selected(q: int, r: int, tile_type: String, buildable: bool) -> void:
+func _on_hex_selected(q: int, r: int, tile_type: String, buildable: bool, has_building: bool) -> void:
 	var buildable_text := "ja" if buildable else "nein"
-	coordinate_label.text = "Hex: q=%d, r=%d | Typ: %s | Bebaubar: %s" % [
+	var building_text := "ja" if has_building else "nein"
+	coordinate_label.text = "Hex: q=%d, r=%d | Typ: %s | Bebaubar: %s | Gebäude: %s" % [
 		q,
 		r,
 		tile_type,
-		buildable_text
+		buildable_text,
+		building_text
 	]
