@@ -1,6 +1,14 @@
 extends Node3D
 
-signal hex_selected(q: int, r: int, tile_type: String, buildable: bool, has_building: bool)
+signal hex_selected(
+	q: int,
+	r: int,
+	tile_type: String,
+	buildable: bool,
+	has_building: bool,
+	adjacent_forests: int,
+	production: int
+)
 signal build_mode_changed(enabled: bool)
 signal wood_changed(amount: int)
 signal message_changed(text: String)
@@ -11,6 +19,7 @@ signal message_changed(text: String)
 @export var generation_seed: int = 12345
 @export var starting_wood: int = 20
 @export var lumberjack_hut_wood_cost: int = 5
+@export var production_interval: float = 5.0
 
 var selected_tile: MeshInstance3D
 var selected_material: StandardMaterial3D
@@ -18,6 +27,9 @@ var building_material: StandardMaterial3D
 var tile_materials: Dictionary = {}
 var build_mode: bool = false
 var wood: int = 0
+var tiles_by_coords: Dictionary = {}
+var lumberjack_hut_tiles: Array[MeshInstance3D] = []
+var production_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -31,6 +43,16 @@ func _ready() -> void:
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
 	building_material = _make_material(Color(0.46, 0.25, 0.10))
 	_generate_grid()
+
+
+func _process(delta: float) -> void:
+	if lumberjack_hut_tiles.is_empty():
+		return
+
+	production_timer += delta
+	while production_timer >= production_interval:
+		production_timer -= production_interval
+		_run_production_cycle()
 
 
 func _generate_grid() -> void:
@@ -55,6 +77,7 @@ func _create_tile(q: int, r: int) -> void:
 	tile.set_meta("buildable", _is_tile_buildable(tile_type))
 	tile.set_meta("has_building", false)
 	add_child(tile)
+	tiles_by_coords[_coords_key(q, r)] = tile
 
 	var body := StaticBody3D.new()
 	body.name = "ClickBody"
@@ -160,7 +183,9 @@ func _select_tile_under_mouse() -> void:
 			tile.get_meta("r"),
 			tile.get_meta("tile_type"),
 			tile.get_meta("buildable"),
-			tile.get_meta("has_building")
+			tile.get_meta("has_building"),
+			_get_tile_adjacent_forests(tile),
+			_get_tile_production(tile)
 		)
 
 
@@ -203,14 +228,67 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	marker.position = Vector3(0.0, tile_height + marker_size * 0.5, 0.0)
 
 	tile.add_child(marker)
+	var adjacent_forests := _count_adjacent_forests(int(tile.get_meta("q")), int(tile.get_meta("r")))
 	tile.set_meta("has_building", true)
 	tile.set_meta("building_name", "Holzfällerhütte")
+	tile.set_meta("adjacent_forests", adjacent_forests)
+	tile.set_meta("lumberjack_production", adjacent_forests)
+	lumberjack_hut_tiles.append(tile)
 
 
 func _add_wood(amount: int) -> void:
 	wood += amount
 	wood_changed.emit(wood)
 	message_changed.emit("+%d Holz erhalten." % amount)
+
+
+func _run_production_cycle() -> void:
+	var produced_wood := 0
+
+	for tile in lumberjack_hut_tiles:
+		produced_wood += _get_tile_production(tile)
+
+	if produced_wood <= 0:
+		return
+
+	wood += produced_wood
+	wood_changed.emit(wood)
+	message_changed.emit("Holzfällerhütten produziert: +%d Holz." % produced_wood)
+
+
+func _count_adjacent_forests(q: int, r: int) -> int:
+	var adjacent_offsets := [
+		Vector2i(1, 0),
+		Vector2i(1, -1),
+		Vector2i(0, -1),
+		Vector2i(-1, 0),
+		Vector2i(-1, 1),
+		Vector2i(0, 1),
+	]
+	var forest_count := 0
+
+	for offset in adjacent_offsets:
+		var neighbor := tiles_by_coords.get(_coords_key(q + offset.x, r + offset.y))
+		if neighbor is MeshInstance3D and neighbor.get_meta("tile_type") == "Wald":
+			forest_count += 1
+
+	return forest_count
+
+
+func _get_tile_adjacent_forests(tile: MeshInstance3D) -> int:
+	if tile.has_meta("adjacent_forests"):
+		return int(tile.get_meta("adjacent_forests"))
+	return 0
+
+
+func _get_tile_production(tile: MeshInstance3D) -> int:
+	if tile.has_meta("lumberjack_production"):
+		return int(tile.get_meta("lumberjack_production"))
+	return 0
+
+
+func _coords_key(q: int, r: int) -> String:
+	return "%d:%d" % [q, r]
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
