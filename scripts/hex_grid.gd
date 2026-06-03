@@ -9,7 +9,9 @@ signal hex_selected(
 	building_name: String,
 	own_forest: bool,
 	adjacent_forests: int,
-	production: int
+	production: int,
+	in_settlement_area: bool,
+	village_center_distance: int
 )
 signal selection_cleared
 signal build_mode_changed(enabled: bool)
@@ -23,10 +25,12 @@ signal message_changed(text: String)
 @export var starting_wood: int = 20
 @export var lumberjack_hut_wood_cost: int = 5
 @export var production_interval: float = 5.0
+@export var village_center_influence_radius: int = 3
 
 var selected_tile: MeshInstance3D
 var selected_material: StandardMaterial3D
 var building_material: StandardMaterial3D
+var influence_marker_material: StandardMaterial3D
 var tile_materials: Dictionary = {}
 var build_mode: bool = false
 var wood: int = 0
@@ -34,6 +38,7 @@ var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
 var village_center_tile: MeshInstance3D
+var show_influence_area: bool = false
 
 
 func _ready() -> void:
@@ -46,8 +51,10 @@ func _ready() -> void:
 	}
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
 	building_material = _make_material(Color(0.46, 0.25, 0.10))
+	influence_marker_material = _make_material(Color(0.90, 0.82, 0.20))
 	_generate_grid()
 	_place_starting_village_center()
+	_update_village_center_influence()
 
 
 func _process(delta: float) -> void:
@@ -81,6 +88,8 @@ func _create_tile(q: int, r: int) -> void:
 	tile.set_meta("tile_type", tile_type)
 	tile.set_meta("buildable", _is_tile_buildable(tile_type))
 	tile.set_meta("has_building", false)
+	tile.set_meta("in_settlement_area", false)
+	tile.set_meta("village_center_distance", -1)
 	add_child(tile)
 	tiles_by_coords[_coords_key(q, r)] = tile
 
@@ -160,6 +169,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		_clear_selection()
 
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_V:
+		show_influence_area = not show_influence_area
+		_set_influence_markers_visible(show_influence_area)
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_select_tile_under_mouse()
 
@@ -197,7 +210,9 @@ func _select_tile_under_mouse() -> void:
 			_get_tile_building_name(tile_mesh),
 			_get_tile_own_forest(tile_mesh),
 			_get_tile_adjacent_forests(tile_mesh),
-			_get_tile_production(tile_mesh)
+			_get_tile_production(tile_mesh),
+			_get_tile_in_settlement_area(tile_mesh),
+			_get_tile_village_center_distance(tile_mesh)
 		)
 
 
@@ -225,6 +240,10 @@ func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 		message_changed.emit("Kann hier nicht bauen: Feld hat bereits ein Gebäude.")
 		return
 
+	if not _get_tile_in_settlement_area(tile):
+		message_changed.emit("Außerhalb des Siedlungsgebiets")
+		return
+
 	if wood < lumberjack_hut_wood_cost:
 		message_changed.emit("Nicht genug Holz. Holzfällerhütte kostet %d Holz." % lumberjack_hut_wood_cost)
 		return
@@ -237,7 +256,7 @@ func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 
 func _place_starting_village_center() -> void:
 	var center_tile_variant: Variant = tiles_by_coords.get(_coords_key(0, 0))
-	if not center_tile_variant is MeshInstance3D:
+	if not (center_tile_variant is MeshInstance3D):
 		return
 
 	var center_tile: MeshInstance3D = center_tile_variant as MeshInstance3D
@@ -259,6 +278,57 @@ func _place_starting_village_center() -> void:
 	center_tile.set_meta("building_type", "village_center")
 	center_tile.set_meta("nearest_village_center_coords", Vector2i(0, 0))
 	village_center_tile = center_tile
+
+
+func _update_village_center_influence() -> void:
+	if village_center_tile == null:
+		return
+
+	var center_q: int = int(village_center_tile.get_meta("q"))
+	var center_r: int = int(village_center_tile.get_meta("r"))
+
+	for tile_variant in tiles_by_coords.values():
+		if not (tile_variant is MeshInstance3D):
+			continue
+
+		var tile: MeshInstance3D = tile_variant as MeshInstance3D
+		var distance: int = _hex_distance(
+			center_q,
+			center_r,
+			int(tile.get_meta("q")),
+			int(tile.get_meta("r"))
+		)
+		var in_area: bool = distance <= village_center_influence_radius
+		tile.set_meta("village_center_distance", distance)
+		tile.set_meta("in_settlement_area", in_area)
+
+		if in_area:
+			_add_influence_marker(tile)
+
+
+func _add_influence_marker(tile: MeshInstance3D) -> void:
+	if tile.has_node("InfluenceMarker"):
+		return
+
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "InfluenceMarker"
+	marker.mesh = _create_hex_mesh()
+	marker.material_override = influence_marker_material
+	marker.position = Vector3(0.0, 0.02, 0.0)
+	marker.scale = Vector3(0.88, 1.0, 0.88)
+	marker.visible = show_influence_area
+	tile.add_child(marker)
+
+
+func _set_influence_markers_visible(visible: bool) -> void:
+	for tile_variant in tiles_by_coords.values():
+		if not (tile_variant is MeshInstance3D):
+			continue
+
+		var tile: MeshInstance3D = tile_variant as MeshInstance3D
+		var marker: Node = tile.get_node_or_null("InfluenceMarker")
+		if marker is MeshInstance3D:
+			marker.visible = visible
 
 
 func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
@@ -342,6 +412,18 @@ func _get_tile_building_name(tile: MeshInstance3D) -> String:
 	return ""
 
 
+func _get_tile_in_settlement_area(tile: MeshInstance3D) -> bool:
+	if tile.has_meta("in_settlement_area"):
+		return bool(tile.get_meta("in_settlement_area"))
+	return false
+
+
+func _get_tile_village_center_distance(tile: MeshInstance3D) -> int:
+	if tile.has_meta("village_center_distance"):
+		return int(tile.get_meta("village_center_distance"))
+	return -1
+
+
 func _get_tile_adjacent_forests(tile: MeshInstance3D) -> int:
 	if tile.has_meta("adjacent_forests"):
 		return int(tile.get_meta("adjacent_forests"))
@@ -365,6 +447,13 @@ func _get_nearest_village_center_coords() -> Vector2i:
 		int(village_center_tile.get_meta("q")),
 		int(village_center_tile.get_meta("r"))
 	)
+
+
+func _hex_distance(from_q: int, from_r: int, to_q: int, to_r: int) -> int:
+	var delta_q: int = to_q - from_q
+	var delta_r: int = to_r - from_r
+	var delta_s: int = -delta_q - delta_r
+	return int((abs(delta_q) + abs(delta_r) + abs(delta_s)) / 2)
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
