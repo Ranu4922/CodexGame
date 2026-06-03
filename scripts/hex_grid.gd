@@ -1,18 +1,24 @@
 extends Node3D
 
-signal hex_selected(q: int, r: int)
+signal hex_selected(q: int, r: int, tile_type: String, buildable: bool)
 
 @export var radius: int = 6
 @export var hex_size: float = 1.0
 @export var tile_height: float = 0.08
+@export var generation_seed: int = 12345
 
 var selected_tile: MeshInstance3D
-var tile_material: StandardMaterial3D
 var selected_material: StandardMaterial3D
+var tile_materials: Dictionary = {}
 
 
 func _ready() -> void:
-	tile_material = _make_material(Color(0.22, 0.55, 0.32))
+	tile_materials = {
+		"Gras": _make_material(Color(0.22, 0.55, 0.32)),
+		"Wald": _make_material(Color(0.08, 0.32, 0.16)),
+		"Wasser": _make_material(Color(0.12, 0.36, 0.78)),
+		"Stein": _make_material(Color(0.45, 0.46, 0.43)),
+	}
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
 	_generate_grid()
 
@@ -26,13 +32,17 @@ func _generate_grid() -> void:
 
 
 func _create_tile(q: int, r: int) -> void:
+	var tile_type := _get_tile_type(q, r)
+
 	var tile := MeshInstance3D.new()
 	tile.name = "Hex_%d_%d" % [q, r]
 	tile.mesh = _create_hex_mesh()
-	tile.material_override = tile_material
+	tile.material_override = tile_materials[tile_type]
 	tile.position = axial_to_world(q, r)
 	tile.set_meta("q", q)
 	tile.set_meta("r", r)
+	tile.set_meta("tile_type", tile_type)
+	tile.set_meta("buildable", _is_tile_buildable(tile_type))
 	add_child(tile)
 
 	var body := StaticBody3D.new()
@@ -81,6 +91,24 @@ func axial_to_world(q: int, r: int) -> Vector3:
 	return Vector3(x, 0.0, z)
 
 
+func _get_tile_type(q: int, r: int) -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%d:%d:%d" % [generation_seed, q, r])
+	var roll := rng.randf()
+
+	if roll < 0.16:
+		return "Wasser"
+	if roll < 0.36:
+		return "Wald"
+	if roll < 0.48:
+		return "Stein"
+	return "Gras"
+
+
+func _is_tile_buildable(tile_type: String) -> bool:
+	return tile_type != "Wasser"
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_select_tile_under_mouse()
@@ -105,12 +133,17 @@ func _select_tile_under_mouse() -> void:
 	var tile := collider.get_parent()
 	if tile is MeshInstance3D and tile.has_meta("q") and tile.has_meta("r"):
 		_set_selected_tile(tile)
-		hex_selected.emit(tile.get_meta("q"), tile.get_meta("r"))
+		hex_selected.emit(
+			tile.get_meta("q"),
+			tile.get_meta("r"),
+			tile.get_meta("tile_type"),
+			tile.get_meta("buildable")
+		)
 
 
 func _set_selected_tile(tile: MeshInstance3D) -> void:
 	if selected_tile != null:
-		selected_tile.material_override = tile_material
+		selected_tile.material_override = tile_materials[selected_tile.get_meta("tile_type")]
 
 	selected_tile = tile
 	selected_tile.material_override = selected_material
