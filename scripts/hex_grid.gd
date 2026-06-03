@@ -195,11 +195,12 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	var marker := MeshInstance3D.new()
 	marker.name = "Holzfaellerhuette"
 
+	var marker_size := hex_size * 1.25
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.65, 0.55, 0.65)
+	mesh.size = Vector3(marker_size, marker_size, marker_size)
 	marker.mesh = mesh
 	marker.material_override = building_material
-	marker.position = Vector3(0.0, tile_height + 0.28, 0.0)
+	marker.position = Vector3(0.0, tile_height + marker_size * 0.5, 0.0)
 
 	tile.add_child(marker)
 	tile.set_meta("has_building", true)
