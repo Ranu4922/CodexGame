@@ -15,6 +15,7 @@ signal hex_selected(
 )
 signal selection_cleared
 signal build_mode_changed(enabled: bool)
+signal selected_building_changed(display_name: String)
 signal wood_changed(amount: int)
 signal message_changed(text: String)
 
@@ -24,6 +25,7 @@ signal message_changed(text: String)
 @export var generation_seed: int = 12345
 @export var starting_wood: int = 20
 @export var lumberjack_hut_wood_cost: int = 5
+@export var house_wood_cost: int = 10
 @export var production_interval: float = 5.0
 @export var village_center_influence_radius: int = 3
 
@@ -39,6 +41,7 @@ var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
 var village_center_tile: MeshInstance3D
 var show_influence_area: bool = false
+var selected_building_type: String = "lumberjack_hut"
 
 
 func _ready() -> void:
@@ -166,6 +169,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		_add_wood(10)
 
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_1:
+		selected_building_type = "lumberjack_hut"
+		selected_building_changed.emit("Holzfällerhütte")
+
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_2:
+		selected_building_type = "house"
+		selected_building_changed.emit("Wohnhaus")
+
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		_clear_selection()
 
@@ -199,7 +210,7 @@ func _select_tile_under_mouse() -> void:
 		var tile_mesh: MeshInstance3D = tile as MeshInstance3D
 		_set_selected_tile(tile_mesh)
 		if build_mode:
-			_try_place_lumberjack_hut(tile_mesh)
+			_try_place_selected_building(tile_mesh)
 
 		hex_selected.emit(
 			int(tile_mesh.get_meta("q")),
@@ -231,7 +242,7 @@ func _clear_selection() -> void:
 	selection_cleared.emit()
 
 
-func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
+func _try_place_selected_building(tile: MeshInstance3D) -> void:
 	if not tile.get_meta("buildable"):
 		message_changed.emit("Kann hier nicht bauen: Feld ist nicht bebaubar.")
 		return
@@ -244,6 +255,14 @@ func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 		message_changed.emit("Außerhalb des Siedlungsgebiets")
 		return
 
+	if selected_building_type == "house":
+		_try_place_house(tile)
+		return
+
+	_try_place_lumberjack_hut(tile)
+
+
+func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	if wood < lumberjack_hut_wood_cost:
 		message_changed.emit("Nicht genug Holz. Holzfällerhütte kostet %d Holz." % lumberjack_hut_wood_cost)
 		return
@@ -252,6 +271,17 @@ func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	wood_changed.emit(wood)
 	_place_lumberjack_hut(tile)
 	message_changed.emit("Holzfällerhütte gebaut: -%d Holz." % lumberjack_hut_wood_cost)
+
+
+func _try_place_house(tile: MeshInstance3D) -> void:
+	if wood < house_wood_cost:
+		message_changed.emit("Nicht genug Holz. Wohnhaus kostet %d Holz." % house_wood_cost)
+		return
+
+	wood -= house_wood_cost
+	wood_changed.emit(wood)
+	_place_house(tile)
+	message_changed.emit("Wohnhaus gebaut: -%d Holz." % house_wood_cost)
 
 
 func _place_starting_village_center() -> void:
@@ -359,6 +389,26 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	tile.set_meta("adjacent_forests", adjacent_forests)
 	tile.set_meta("lumberjack_production", production)
 	lumberjack_hut_tiles.append(tile)
+
+
+func _place_house(tile: MeshInstance3D) -> void:
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "Wohnhaus"
+
+	var marker_size: float = hex_size * 1.10
+	var mesh: BoxMesh = BoxMesh.new()
+	mesh.size = Vector3(marker_size, hex_size * 0.85, marker_size)
+	marker.mesh = mesh
+	marker.material_override = _make_material(Color(0.55, 0.28, 0.68))
+	marker.position = Vector3(0.0, tile_height + hex_size * 0.425, 0.0)
+
+	tile.add_child(marker)
+	tile.set_meta("has_building", true)
+	tile.set_meta("building_name", "Wohnhaus")
+	tile.set_meta("building_type", "house")
+	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
+	tile.set_meta("resident_capacity", 2)
+	tile.set_meta("current_residents", 0)
 
 
 func _add_wood(amount: int) -> void:
