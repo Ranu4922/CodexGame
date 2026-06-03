@@ -6,10 +6,12 @@ signal hex_selected(
 	tile_type: String,
 	buildable: bool,
 	has_building: bool,
+	building_name: String,
 	own_forest: bool,
 	adjacent_forests: int,
 	production: int
 )
+signal selection_cleared
 signal build_mode_changed(enabled: bool)
 signal wood_changed(amount: int)
 signal message_changed(text: String)
@@ -153,6 +155,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		_add_wood(10)
 
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_clear_selection()
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_select_tile_under_mouse()
 
@@ -170,6 +175,7 @@ func _select_tile_under_mouse() -> void:
 	var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 
 	if result.is_empty():
+		_clear_selection()
 		return
 
 	var collider: Node = result["collider"] as Node
@@ -186,6 +192,7 @@ func _select_tile_under_mouse() -> void:
 			String(tile_mesh.get_meta("tile_type")),
 			bool(tile_mesh.get_meta("buildable")),
 			bool(tile_mesh.get_meta("has_building")),
+			_get_tile_building_name(tile_mesh),
 			_get_tile_own_forest(tile_mesh),
 			_get_tile_adjacent_forests(tile_mesh),
 			_get_tile_production(tile_mesh)
@@ -198,6 +205,13 @@ func _set_selected_tile(tile: MeshInstance3D) -> void:
 
 	selected_tile = tile
 	selected_tile.material_override = selected_material
+
+
+func _clear_selection() -> void:
+	if selected_tile != null:
+		selected_tile.material_override = tile_materials[selected_tile.get_meta("tile_type")]
+		selected_tile = null
+	selection_cleared.emit()
 
 
 func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
@@ -264,7 +278,7 @@ func _run_production_cycle() -> void:
 
 	wood += produced_wood
 	wood_changed.emit(wood)
-	message_changed.emit("Holzfällerhütten produziert: +%d Holz." % produced_wood)
+	message_changed.emit("+%d Holz" % produced_wood)
 
 
 func _count_adjacent_forests(q: int, r: int) -> int:
@@ -290,6 +304,12 @@ func _get_tile_own_forest(tile: MeshInstance3D) -> bool:
 	if tile.has_meta("own_forest"):
 		return bool(tile.get_meta("own_forest"))
 	return false
+
+
+func _get_tile_building_name(tile: MeshInstance3D) -> String:
+	if tile.has_meta("building_name"):
+		return String(tile.get_meta("building_name"))
+	return ""
 
 
 func _get_tile_adjacent_forests(tile: MeshInstance3D) -> int:
