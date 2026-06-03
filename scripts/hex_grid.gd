@@ -33,6 +33,7 @@ var wood: int = 0
 var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
+var village_center_tile: MeshInstance3D
 
 
 func _ready() -> void:
@@ -46,6 +47,7 @@ func _ready() -> void:
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
 	building_material = _make_material(Color(0.46, 0.25, 0.10))
 	_generate_grid()
+	_place_starting_village_center()
 
 
 func _process(delta: float) -> void:
@@ -233,6 +235,32 @@ func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	message_changed.emit("Holzfällerhütte gebaut: -%d Holz." % lumberjack_hut_wood_cost)
 
 
+func _place_starting_village_center() -> void:
+	var center_tile_variant: Variant = tiles_by_coords.get(_coords_key(0, 0))
+	if not center_tile_variant is MeshInstance3D:
+		return
+
+	var center_tile: MeshInstance3D = center_tile_variant as MeshInstance3D
+	if bool(center_tile.get_meta("has_building")):
+		return
+
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "Dorfzentrum"
+
+	var mesh: BoxMesh = BoxMesh.new()
+	mesh.size = Vector3(hex_size * 1.35, hex_size * 0.75, hex_size * 1.35)
+	marker.mesh = mesh
+	marker.material_override = _make_material(Color(0.72, 0.58, 0.30))
+	marker.position = Vector3(0.0, tile_height + hex_size * 0.375, 0.0)
+
+	center_tile.add_child(marker)
+	center_tile.set_meta("has_building", true)
+	center_tile.set_meta("building_name", "Dorfzentrum")
+	center_tile.set_meta("building_type", "village_center")
+	center_tile.set_meta("nearest_village_center_coords", Vector2i(0, 0))
+	village_center_tile = center_tile
+
+
 func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	var marker: MeshInstance3D = MeshInstance3D.new()
 	marker.name = "Holzfaellerhuette"
@@ -255,6 +283,8 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 
 	tile.set_meta("has_building", true)
 	tile.set_meta("building_name", "Holzfällerhütte")
+	tile.set_meta("building_type", "lumberjack_hut")
+	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
 	tile.set_meta("own_forest", own_forest)
 	tile.set_meta("adjacent_forests", adjacent_forests)
 	tile.set_meta("lumberjack_production", production)
@@ -326,6 +356,15 @@ func _get_tile_production(tile: MeshInstance3D) -> int:
 
 func _coords_key(q: int, r: int) -> String:
 	return "%d:%d" % [q, r]
+
+
+func _get_nearest_village_center_coords() -> Vector2i:
+	if village_center_tile == null:
+		return Vector2i.ZERO
+	return Vector2i(
+		int(village_center_tile.get_meta("q")),
+		int(village_center_tile.get_meta("r"))
+	)
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
