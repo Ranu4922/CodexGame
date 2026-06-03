@@ -19,8 +19,8 @@ func _ready() -> void:
 
 func _generate_grid() -> void:
 	for q in range(-radius, radius + 1):
-		var r_min := max(-radius, -q - radius)
-		var r_max := min(radius, -q + radius)
+		var r_min: int = max(-radius, -q - radius)
+		var r_max: int = min(radius, -q + radius)
 		for r in range(r_min, r_max + 1):
 			_create_tile(q, r)
 
