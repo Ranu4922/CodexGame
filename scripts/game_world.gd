@@ -30,17 +30,22 @@ func _on_hex_selected(
 	building_name: String,
 	own_forest: bool,
 	adjacent_forests: int,
-	production: int
+	production: int,
+	in_settlement_area: bool,
+	village_center_distance: int
 ) -> void:
 	var buildable_text: String = "ja" if buildable else "nein"
 	var building_text: String = "nein"
 	if has_building:
 		building_text = building_name if not building_name.is_empty() else "ja"
+	var settlement_text: String = "Ja" if in_settlement_area else "Nein"
 	var lines: PackedStringArray = PackedStringArray([
 		"Koordinaten: q=%d, r=%d" % [q, r],
 		"Tile-Typ: %s" % tile_type,
 		"Bebaubar: %s" % buildable_text,
 		"Gebäude: %s" % building_text,
+		"Im Siedlungsgebiet: %s" % settlement_text,
+		"Entfernung zum Dorfzentrum: %d" % village_center_distance,
 	])
 
 	if has_building and building_name == "Holzfällerhütte":
