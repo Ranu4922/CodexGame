@@ -14,7 +14,7 @@ script = ExtResource("2_hex_grid_script")
 script = ExtResource("3_camera_script")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
-transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0, 12, 12)
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0.7071068, 0, 12, 12)
 projection = 1
 size = 16.0
 current = true
@@ -32,9 +32,23 @@ offset_right = 440.0
 offset_bottom = 48.0
 text = "Baumodus: AUS"
 
-[node name="CoordinateLabel" type="Label" parent="CanvasLayer"]
+[node name="ResourceLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 44.0
-offset_right = 760.0
+offset_right = 440.0
 offset_bottom = 76.0
+text = "Holz: 20"
+
+[node name="CoordinateLabel" type="Label" parent="CanvasLayer"]
+offset_left = 16.0
+offset_top = 72.0
+offset_right = 760.0
+offset_bottom = 104.0
 text = "Hex: -"
+
+[node name="MessageLabel" type="Label" parent="CanvasLayer"]
+offset_left = 16.0
+offset_top = 100.0
+offset_right = 760.0
+offset_bottom = 132.0
+text = ""
