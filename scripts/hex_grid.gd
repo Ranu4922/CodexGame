@@ -6,6 +6,7 @@ signal hex_selected(
 	tile_type: String,
 	buildable: bool,
 	has_building: bool,
+	own_forest: bool,
 	adjacent_forests: int,
 	production: int
 )
@@ -64,9 +65,9 @@ func _generate_grid() -> void:
 
 
 func _create_tile(q: int, r: int) -> void:
-	var tile_type := _get_tile_type(q, r)
+	var tile_type: String = _get_tile_type(q, r)
 
-	var tile := MeshInstance3D.new()
+	var tile: MeshInstance3D = MeshInstance3D.new()
 	tile.name = "Hex_%d_%d" % [q, r]
 	tile.mesh = _create_hex_mesh()
 	tile.material_override = tile_materials[tile_type]
@@ -79,12 +80,12 @@ func _create_tile(q: int, r: int) -> void:
 	add_child(tile)
 	tiles_by_coords[_coords_key(q, r)] = tile
 
-	var body := StaticBody3D.new()
+	var body: StaticBody3D = StaticBody3D.new()
 	body.name = "ClickBody"
 	tile.add_child(body)
 
-	var collision := CollisionShape3D.new()
-	var shape := CylinderShape3D.new()
+	var collision: CollisionShape3D = CollisionShape3D.new()
+	var shape: CylinderShape3D = CylinderShape3D.new()
 	shape.radius = hex_size * 0.95
 	shape.height = tile_height + 0.04
 	collision.shape = shape
@@ -92,14 +93,14 @@ func _create_tile(q: int, r: int) -> void:
 
 
 func _create_hex_mesh() -> ArrayMesh:
-	var vertices := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var indices := PackedInt32Array()
+	var vertices: PackedVector3Array = PackedVector3Array()
+	var normals: PackedVector3Array = PackedVector3Array()
+	var indices: PackedInt32Array = PackedInt32Array()
 
 	vertices.append(Vector3(0, tile_height, 0))
 	normals.append(Vector3.UP)
 	for i in range(6):
-		var angle := deg_to_rad(60.0 * i + 30.0)
+		var angle: float = deg_to_rad(60.0 * i + 30.0)
 		vertices.append(Vector3(cos(angle) * hex_size, tile_height, sin(angle) * hex_size))
 		normals.append(Vector3.UP)
 
@@ -108,27 +109,27 @@ func _create_hex_mesh() -> ArrayMesh:
 		indices.append(i + 1)
 		indices.append(1 if i == 5 else i + 2)
 
-	var arrays := []
+	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_INDEX] = indices
 
-	var mesh := ArrayMesh.new()
+	var mesh: ArrayMesh = ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
 
 
 func axial_to_world(q: int, r: int) -> Vector3:
-	var x := hex_size * sqrt(3.0) * (q + r * 0.5)
-	var z := hex_size * 1.5 * r
+	var x: float = hex_size * sqrt(3.0) * (q + r * 0.5)
+	var z: float = hex_size * 1.5 * r
 	return Vector3(x, 0.0, z)
 
 
 func _get_tile_type(q: int, r: int) -> String:
-	var rng := RandomNumberGenerator.new()
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = hash("%d:%d:%d" % [generation_seed, q, r])
-	var roll := rng.randf()
+	var roll: float = rng.randf()
 
 	if roll < 0.16:
 		return "Wasser"
@@ -157,22 +158,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _select_tile_under_mouse() -> void:
-	var camera := get_viewport().get_camera_3d()
+	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera == null:
 		return
 
-	var mouse_position := get_viewport().get_mouse_position()
-	var ray_origin := camera.project_ray_origin(mouse_position)
-	var ray_end := ray_origin + camera.project_ray_normal(mouse_position) * 1000.0
+	var mouse_position: Vector2 = get_viewport().get_mouse_position()
+	var ray_origin: Vector3 = camera.project_ray_origin(mouse_position)
+	var ray_end: Vector3 = ray_origin + camera.project_ray_normal(mouse_position) * 1000.0
 
-	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
-	var result := get_world_3d().direct_space_state.intersect_ray(query)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 
 	if result.is_empty():
 		return
 
-	var collider := result["collider"] as Node
-	var tile := collider.get_parent()
+	var collider: Node = result["collider"] as Node
+	var tile: Node = collider.get_parent()
 	if tile is MeshInstance3D and tile.has_meta("q") and tile.has_meta("r"):
 		_set_selected_tile(tile)
 		if build_mode:
@@ -184,6 +185,7 @@ func _select_tile_under_mouse() -> void:
 			tile.get_meta("tile_type"),
 			tile.get_meta("buildable"),
 			tile.get_meta("has_building"),
+			_get_tile_own_forest(tile),
 			_get_tile_adjacent_forests(tile),
 			_get_tile_production(tile)
 		)
@@ -217,22 +219,30 @@ func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 
 
 func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
-	var marker := MeshInstance3D.new()
+	var marker: MeshInstance3D = MeshInstance3D.new()
 	marker.name = "Holzfaellerhuette"
 
-	var marker_size := hex_size * 1.25
-	var mesh := BoxMesh.new()
+	var marker_size: float = hex_size * 1.25
+	var mesh: BoxMesh = BoxMesh.new()
 	mesh.size = Vector3(marker_size, marker_size, marker_size)
 	marker.mesh = mesh
 	marker.material_override = building_material
 	marker.position = Vector3(0.0, tile_height + marker_size * 0.5, 0.0)
 
 	tile.add_child(marker)
-	var adjacent_forests := _count_adjacent_forests(int(tile.get_meta("q")), int(tile.get_meta("r")))
+	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
+	var adjacent_forests: int = _count_adjacent_forests(int(tile.get_meta("q")), int(tile.get_meta("r")))
+	var production: int = adjacent_forests
+	if own_forest:
+		production += 2
+	if production > 8:
+		production = 8
+
 	tile.set_meta("has_building", true)
 	tile.set_meta("building_name", "Holzfällerhütte")
+	tile.set_meta("own_forest", own_forest)
 	tile.set_meta("adjacent_forests", adjacent_forests)
-	tile.set_meta("lumberjack_production", adjacent_forests)
+	tile.set_meta("lumberjack_production", production)
 	lumberjack_hut_tiles.append(tile)
 
 
@@ -243,7 +253,7 @@ func _add_wood(amount: int) -> void:
 
 
 func _run_production_cycle() -> void:
-	var produced_wood := 0
+	var produced_wood: int = 0
 
 	for tile in lumberjack_hut_tiles:
 		produced_wood += _get_tile_production(tile)
@@ -257,7 +267,7 @@ func _run_production_cycle() -> void:
 
 
 func _count_adjacent_forests(q: int, r: int) -> int:
-	var adjacent_offsets := [
+	var adjacent_offsets: Array[Vector2i] = [
 		Vector2i(1, 0),
 		Vector2i(1, -1),
 		Vector2i(0, -1),
@@ -265,14 +275,20 @@ func _count_adjacent_forests(q: int, r: int) -> int:
 		Vector2i(-1, 1),
 		Vector2i(0, 1),
 	]
-	var forest_count := 0
+	var forest_count: int = 0
 
 	for offset in adjacent_offsets:
-		var neighbor := tiles_by_coords.get(_coords_key(q + offset.x, r + offset.y))
+		var neighbor: Variant = tiles_by_coords.get(_coords_key(q + offset.x, r + offset.y))
 		if neighbor is MeshInstance3D and neighbor.get_meta("tile_type") == "Wald":
 			forest_count += 1
 
 	return forest_count
+
+
+func _get_tile_own_forest(tile: MeshInstance3D) -> bool:
+	if tile.has_meta("own_forest"):
+		return bool(tile.get_meta("own_forest"))
+	return false
 
 
 func _get_tile_adjacent_forests(tile: MeshInstance3D) -> int:
@@ -292,7 +308,7 @@ func _coords_key(q: int, r: int) -> String:
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = 0.8
 	return material
