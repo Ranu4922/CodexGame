@@ -175,19 +175,20 @@ func _select_tile_under_mouse() -> void:
 	var collider: Node = result["collider"] as Node
 	var tile: Node = collider.get_parent()
 	if tile is MeshInstance3D and tile.has_meta("q") and tile.has_meta("r"):
-		_set_selected_tile(tile)
+		var tile_mesh: MeshInstance3D = tile as MeshInstance3D
+		_set_selected_tile(tile_mesh)
 		if build_mode:
-			_try_place_lumberjack_hut(tile)
+			_try_place_lumberjack_hut(tile_mesh)
 
 		hex_selected.emit(
-			tile.get_meta("q"),
-			tile.get_meta("r"),
-			tile.get_meta("tile_type"),
-			tile.get_meta("buildable"),
-			tile.get_meta("has_building"),
-			_get_tile_own_forest(tile),
-			_get_tile_adjacent_forests(tile),
-			_get_tile_production(tile)
+			int(tile_mesh.get_meta("q")),
+			int(tile_mesh.get_meta("r")),
+			String(tile_mesh.get_meta("tile_type")),
+			bool(tile_mesh.get_meta("buildable")),
+			bool(tile_mesh.get_meta("has_building")),
+			_get_tile_own_forest(tile_mesh),
+			_get_tile_adjacent_forests(tile_mesh),
+			_get_tile_production(tile_mesh)
 		)
 
 
