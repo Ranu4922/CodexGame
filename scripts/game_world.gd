@@ -33,7 +33,9 @@ func _on_hex_selected(
 	production: int
 ) -> void:
 	var buildable_text: String = "ja" if buildable else "nein"
-	var building_text: String = "ja" if has_building else "nein"
+	var building_text: String = "nein"
+	if has_building:
+		building_text = building_name if not building_name.is_empty() else "ja"
 	var lines: PackedStringArray = PackedStringArray([
 		"Koordinaten: q=%d, r=%d" % [q, r],
 		"Tile-Typ: %s" % tile_type,
@@ -43,7 +45,6 @@ func _on_hex_selected(
 
 	if has_building and building_name == "Holzfällerhütte":
 		var own_forest_text: String = "ja" if own_forest else "nein"
-		lines.append("Gebäude: Holzfällerhütte")
 		lines.append("Eigenes Wald-Hex: %s" % own_forest_text)
 		lines.append("Angrenzende Wälder: %d/6" % adjacent_forests)
 		lines.append("Produktion: %d Holz / 5 Sekunden" % production)
