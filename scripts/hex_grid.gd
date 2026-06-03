@@ -17,6 +17,7 @@ signal selection_cleared
 signal build_mode_changed(enabled: bool)
 signal selected_building_changed(display_name: String)
 signal wood_changed(amount: int)
+signal housing_changed(amount: int)
 signal message_changed(text: String)
 
 @export var radius: int = 6
@@ -36,6 +37,7 @@ var influence_marker_material: StandardMaterial3D
 var tile_materials: Dictionary = {}
 var build_mode: bool = false
 var wood: int = 0
+var housing_capacity: int = 0
 var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
@@ -409,12 +411,28 @@ func _place_house(tile: MeshInstance3D) -> void:
 	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
 	tile.set_meta("resident_capacity", 2)
 	tile.set_meta("current_residents", 0)
+	_recalculate_housing_capacity()
 
 
 func _add_wood(amount: int) -> void:
 	wood += amount
 	wood_changed.emit(wood)
 	message_changed.emit("+%d Holz erhalten." % amount)
+
+
+func _recalculate_housing_capacity() -> void:
+	var total_capacity: int = 0
+
+	for tile_variant in tiles_by_coords.values():
+		if not (tile_variant is MeshInstance3D):
+			continue
+
+		var tile: MeshInstance3D = tile_variant as MeshInstance3D
+		if String(tile.get_meta("building_type", "")) == "house":
+			total_capacity += int(tile.get_meta("resident_capacity", 0))
+
+	housing_capacity = total_capacity
+	housing_changed.emit(housing_capacity)
 
 
 func _run_production_cycle() -> void:
