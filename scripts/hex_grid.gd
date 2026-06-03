@@ -1,6 +1,6 @@
 extends Node3D
 
-signal hex_selected(q: int, r: int, tile_type: String, buildable: bool)
+signal hex_selected(q: int, r: int, tile_type: String, buildable: bool, has_building: bool)
 
 @export var radius: int = 6
 @export var hex_size: float = 1.0
@@ -9,7 +9,9 @@ signal hex_selected(q: int, r: int, tile_type: String, buildable: bool)
 
 var selected_tile: MeshInstance3D
 var selected_material: StandardMaterial3D
+var building_material: StandardMaterial3D
 var tile_materials: Dictionary = {}
+var build_mode: bool = false
 
 
 func _ready() -> void:
@@ -20,6 +22,7 @@ func _ready() -> void:
 		"Stein": _make_material(Color(0.45, 0.46, 0.43)),
 	}
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
+	building_material = _make_material(Color(0.46, 0.25, 0.10))
 	_generate_grid()
 
 
@@ -43,6 +46,7 @@ func _create_tile(q: int, r: int) -> void:
 	tile.set_meta("r", r)
 	tile.set_meta("tile_type", tile_type)
 	tile.set_meta("buildable", _is_tile_buildable(tile_type))
+	tile.set_meta("has_building", false)
 	add_child(tile)
 
 	var body := StaticBody3D.new()
@@ -110,6 +114,10 @@ func _is_tile_buildable(tile_type: String) -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
+		build_mode = not build_mode
+		print("Baumodus: %s" % ("an" if build_mode else "aus"))
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_select_tile_under_mouse()
 
@@ -133,11 +141,15 @@ func _select_tile_under_mouse() -> void:
 	var tile := collider.get_parent()
 	if tile is MeshInstance3D and tile.has_meta("q") and tile.has_meta("r"):
 		_set_selected_tile(tile)
+		if build_mode and tile.get_meta("buildable") and not tile.get_meta("has_building"):
+			_place_lumberjack_hut(tile)
+
 		hex_selected.emit(
 			tile.get_meta("q"),
 			tile.get_meta("r"),
 			tile.get_meta("tile_type"),
-			tile.get_meta("buildable")
+			tile.get_meta("buildable"),
+			tile.get_meta("has_building")
 		)
 
 
@@ -147,6 +159,21 @@ func _set_selected_tile(tile: MeshInstance3D) -> void:
 
 	selected_tile = tile
 	selected_tile.material_override = selected_material
+
+
+func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
+	var marker := MeshInstance3D.new()
+	marker.name = "Holzfaellerhuette"
+
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.65, 0.55, 0.65)
+	marker.mesh = mesh
+	marker.material_override = building_material
+	marker.position = Vector3(0.0, tile_height + 0.28, 0.0)
+
+	tile.add_child(marker)
+	tile.set_meta("has_building", true)
+	tile.set_meta("building_name", "Holzfällerhütte")
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
