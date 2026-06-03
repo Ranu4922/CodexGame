@@ -22,17 +22,20 @@ func _on_hex_selected(
 	tile_type: String,
 	buildable: bool,
 	has_building: bool,
+	own_forest: bool,
 	adjacent_forests: int,
 	production: int
 ) -> void:
-	var buildable_text := "ja" if buildable else "nein"
-	var building_text := "ja" if has_building else "nein"
-	coordinate_label.text = "Hex: q=%d, r=%d | Typ: %s | Bebaubar: %s | Gebäude: %s | Angrenzende Wälder: %d/6 | Produktion: %d Holz pro 5 Sekunden" % [
+	var buildable_text: String = "ja" if buildable else "nein"
+	var building_text: String = "ja" if has_building else "nein"
+	var own_forest_text: String = "ja" if own_forest else "nein"
+	coordinate_label.text = "Hex: q=%d, r=%d | Typ: %s | Bebaubar: %s | Gebäude: %s | Eigenes Wald-Hex: %s | Angrenzende Wälder: %d/6 | Produktion: %d Holz pro 5 Sekunden" % [
 		q,
 		r,
 		tile_type,
 		buildable_text,
 		building_text,
+		own_forest_text,
 		adjacent_forests,
 		production
 	]
