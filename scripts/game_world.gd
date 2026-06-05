@@ -9,6 +9,9 @@ extends Node3D
 @onready var free_housing_label: Label = $CanvasLayer/FreeHousingLabel
 @onready var workplace_label: Label = $CanvasLayer/WorkplaceLabel
 @onready var free_workplace_label: Label = $CanvasLayer/FreeWorkplaceLabel
+@onready var unemployed_label: Label = $CanvasLayer/UnemployedLabel
+@onready var lumberjack_worker_label: Label = $CanvasLayer/LumberjackWorkerLabel
+@onready var miner_worker_label: Label = $CanvasLayer/MinerWorkerLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
@@ -20,9 +23,6 @@ extends Node3D
 
 var message_version: int = 0
 var selected_building_name: String = "-"
-var workplace_count: int = 0
-var assigned_workplace_count: int = 0
-var free_workplace_count: int = 0
 var building_workplaces: Dictionary = {
 	"lumberjack_hut": 1,
 	"stone_mine": 1,
@@ -49,6 +49,7 @@ func _ready() -> void:
 	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.population_changed.connect(_on_population_changed)
 	hex_grid.free_housing_changed.connect(_on_free_housing_changed)
+	hex_grid.work_changed.connect(_on_work_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	lumberjack_button.pressed.connect(_on_lumberjack_button_pressed)
 	house_button.pressed.connect(_on_house_button_pressed)
@@ -60,12 +61,14 @@ func _ready() -> void:
 	_on_housing_changed(hex_grid.housing_capacity)
 	_on_population_changed(hex_grid.population)
 	_on_free_housing_changed(hex_grid.free_housing)
-	_update_workplace_labels()
+	_on_work_changed(
+		hex_grid.unemployed_count,
+		hex_grid.lumberjack_count,
+		hex_grid.miner_count,
+		hex_grid.workplace_count,
+		hex_grid.free_workplace_count
+	)
 	_on_selection_cleared()
-
-
-func _process(_delta: float) -> void:
-	_update_workplace_labels()
 
 
 func _on_hex_selected(
@@ -75,6 +78,7 @@ func _on_hex_selected(
 	buildable: bool,
 	has_building: bool,
 	building_name: String,
+	assigned_workers: int,
 	own_forest: bool,
 	adjacent_forests: int,
 	wood_production: int,
@@ -101,6 +105,7 @@ func _on_hex_selected(
 	if has_building:
 		var building_workplace_count: int = _get_workplaces_for_building_name(building_name)
 		lines.append("Arbeitsplätze: %d" % building_workplace_count)
+		lines.append("Zugewiesene Arbeiter: %d" % assigned_workers)
 
 	if has_building and building_name == "Holzfällerhütte":
 		var own_forest_text: String = "ja" if own_forest else "nein"
@@ -243,26 +248,12 @@ func _on_free_housing_changed(amount: int) -> void:
 	free_housing_label.text = "Freier Wohnraum: %d" % amount
 
 
-func _update_workplace_labels() -> void:
-	workplace_count = _calculate_workplace_count()
-	free_workplace_count = workplace_count - assigned_workplace_count
-	if free_workplace_count < 0:
-		free_workplace_count = 0
-
-	workplace_label.text = "Arbeitsplätze: %d" % workplace_count
-	free_workplace_label.text = "Freie Arbeitsplätze: %d" % free_workplace_count
-
-
-func _calculate_workplace_count() -> int:
-	var total_workplaces: int = 0
-	var tile_nodes: Array[Node] = hex_grid.get_children()
-
-	for tile_node in tile_nodes:
-		if tile_node is MeshInstance3D and tile_node.has_meta("building_type"):
-			var building_type: String = String(tile_node.get_meta("building_type"))
-			total_workplaces += _get_workplaces_for_building_type(building_type)
-
-	return total_workplaces
+func _on_work_changed(unemployed: int, lumberjacks: int, miners: int, workplaces: int, free_workplaces: int) -> void:
+	workplace_label.text = "Arbeitsplätze: %d" % workplaces
+	free_workplace_label.text = "Freie Arbeitsplätze: %d" % free_workplaces
+	unemployed_label.text = "Arbeitslos: %d" % unemployed
+	lumberjack_worker_label.text = "Holzfäller: %d" % lumberjacks
+	miner_worker_label.text = "Bergarbeiter: %d" % miners
 
 
 func _get_workplaces_for_building_type(building_type: String) -> int:
