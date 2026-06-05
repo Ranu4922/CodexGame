@@ -31,9 +31,11 @@ var building_name_to_type: Dictionary = {
 	"Holzfällerhütte": "lumberjack_hut",
 	"Steinmine": "stone_mine",
 }
+var info_panel_position: Vector2 = Vector2(16.0, 452.0)
 var info_panel_padding: float = 12.0
 var info_panel_min_width: float = 300.0
 var info_panel_min_height: float = 80.0
+var info_panel_line_spacing: int = 4
 
 
 func _ready() -> void:
@@ -120,6 +122,8 @@ func _on_hex_selected(
 func _on_selection_cleared() -> void:
 	info_panel.visible = false
 	info_label.text = ""
+	info_label.size = Vector2.ZERO
+	info_panel.size = Vector2.ZERO
 
 
 func _on_build_mode_changed(enabled: bool) -> void:
@@ -153,17 +157,34 @@ func _configure_info_panel() -> void:
 	panel_style.set_content_margin(SIDE_RIGHT, info_panel_padding)
 	panel_style.set_content_margin(SIDE_BOTTOM, info_panel_padding)
 	info_panel.add_theme_stylebox_override("panel", panel_style)
+	info_panel.position = info_panel_position
+	info_panel.custom_minimum_size = Vector2.ZERO
 	info_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	info_label.add_theme_constant_override("line_spacing", 4)
+	info_label.add_theme_constant_override("line_spacing", info_panel_line_spacing)
 
 
 func _resize_info_panel_to_content() -> void:
-	info_label.reset_size()
-	var label_size: Vector2 = info_label.get_minimum_size()
-	var target_width: float = max(info_panel_min_width, label_size.x + info_panel_padding * 2.0)
-	var target_height: float = max(info_panel_min_height, label_size.y + info_panel_padding * 2.0)
-	info_panel.custom_minimum_size = Vector2(target_width, target_height)
-	info_panel.size = info_panel.custom_minimum_size
+	var font: Font = info_label.get_theme_font("font")
+	var font_size: int = info_label.get_theme_font_size("font_size")
+	var text_lines: PackedStringArray = info_label.text.split("\n")
+	var text_width: float = 0.0
+
+	for text_line in text_lines:
+		var line_size: Vector2 = font.get_string_size(text_line, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+		text_width = max(text_width, line_size.x)
+
+	var line_height: float = font.get_height(font_size) + float(info_panel_line_spacing)
+	var text_height: float = float(text_lines.size()) * line_height
+	var target_width: float = max(info_panel_min_width, text_width + info_panel_padding * 2.0)
+	var target_height: float = max(info_panel_min_height, text_height + info_panel_padding * 2.0)
+	var target_size: Vector2 = Vector2(target_width, target_height)
+	var label_size: Vector2 = Vector2(text_width, text_height)
+
+	info_panel.position = info_panel_position
+	info_panel.custom_minimum_size = Vector2.ZERO
+	info_panel.size = target_size
+	info_label.custom_minimum_size = label_size
+	info_label.size = label_size
 
 
 func _on_lumberjack_button_pressed() -> void:
