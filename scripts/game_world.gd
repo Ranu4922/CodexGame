@@ -31,9 +31,13 @@ var building_name_to_type: Dictionary = {
 	"Holzfällerhütte": "lumberjack_hut",
 	"Steinmine": "stone_mine",
 }
+var info_panel_padding: float = 12.0
+var info_panel_min_width: float = 300.0
+var info_panel_min_height: float = 80.0
 
 
 func _ready() -> void:
+	_configure_info_panel()
 	hex_grid.hex_selected.connect(_on_hex_selected)
 	hex_grid.selection_cleared.connect(_on_selection_cleared)
 	hex_grid.build_mode_changed.connect(_on_build_mode_changed)
@@ -109,6 +113,7 @@ func _on_hex_selected(
 		lines.append("Produktion: %d Stein / 5 Sekunden" % stone_production)
 
 	info_label.text = "\n".join(lines)
+	_resize_info_panel_to_content()
 	info_panel.visible = true
 
 
@@ -138,6 +143,27 @@ func _update_build_mode_label(enabled: bool) -> void:
 		build_mode_label.text = "Baumodus: AN (%s)" % selected_building_name
 	else:
 		build_mode_label.text = "Baumodus: AUS"
+
+
+func _configure_info_panel() -> void:
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.05, 0.05, 0.05, 0.72)
+	panel_style.set_content_margin(SIDE_LEFT, info_panel_padding)
+	panel_style.set_content_margin(SIDE_TOP, info_panel_padding)
+	panel_style.set_content_margin(SIDE_RIGHT, info_panel_padding)
+	panel_style.set_content_margin(SIDE_BOTTOM, info_panel_padding)
+	info_panel.add_theme_stylebox_override("panel", panel_style)
+	info_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	info_label.add_theme_constant_override("line_spacing", 4)
+
+
+func _resize_info_panel_to_content() -> void:
+	info_label.reset_size()
+	var label_size: Vector2 = info_label.get_minimum_size()
+	var target_width: float = max(info_panel_min_width, label_size.x + info_panel_padding * 2.0)
+	var target_height: float = max(info_panel_min_height, label_size.y + info_panel_padding * 2.0)
+	info_panel.custom_minimum_size = Vector2(target_width, target_height)
+	info_panel.size = info_panel.custom_minimum_size
 
 
 func _on_lumberjack_button_pressed() -> void:
