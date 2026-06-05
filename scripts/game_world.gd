@@ -104,10 +104,11 @@ func _on_hex_selected(
 	if has_building:
 		var building_workplace_count: int = _get_workplaces_for_building_name(building_name)
 		lines.append("Arbeitsplätze: %d" % building_workplace_count)
-		if _is_production_building(building_name):
+		if building_workplace_count > 0:
 			var workplace_status: String = "belegt" if assigned_workers > 0 else "unbesetzt"
+			var assigned_job_text: String = assigned_job if not assigned_job.is_empty() else "-"
 			lines.append("Arbeitsplatz: %s" % workplace_status)
-			lines.append("Zugewiesener Job: %s" % assigned_job)
+			lines.append("Zugewiesener Job: %s" % assigned_job_text)
 			lines.append(_get_production_text(building_name, wood_production, stone_production, food_production))
 
 	if has_building and building_name == "Holzfällerhütte":
@@ -271,10 +272,6 @@ func _get_workplaces_for_building_name(building_name: String) -> int:
 	if not building_workplaces.has(building_name):
 		return 0
 	return int(building_workplaces[building_name])
-
-
-func _is_production_building(building_name: String) -> bool:
-	return building_name == "Holzfällerhütte" or building_name == "Steinmine" or building_name == "Beerensammler"
 
 
 func _get_production_text(building_name: String, wood_production: int, stone_production: int, food_production: int) -> String:
