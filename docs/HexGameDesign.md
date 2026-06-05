@@ -34,6 +34,57 @@ Mit begrenzten Vorräten sucht die Gruppe nach einem Ort, an dem eine neue Heima
 
 Dort beginnt der Aufbau der ersten Siedlung.
 
+## Spielercharakter
+
+Der Spieler steuert einen eigenen Charakter.
+
+Der Charakter ist der Anführer der Überlebendengruppe und bleibt während des gesamten Spiels relevant.
+
+### Aufgaben des Spielers
+
+Der Spieler kann:
+
+* Die Welt erkunden
+* Neue Bewohner finden und rekrutieren
+* Ruinen untersuchen
+* Monster bekämpfen
+* Mit anderen Siedlungen handeln
+* Neue Siedlungen gründen
+* Außenposten errichten
+
+### Aufgaben der Bewohner
+
+Bewohner übernehmen die alltägliche Arbeit innerhalb der Siedlungen.
+
+Dazu gehören:
+
+* Holzfällerei
+* Bergbau
+* Landwirtschaft
+* Jagd
+* Produktion
+
+Der Spieler muss diese Arbeiten nicht selbst ausführen.
+
+### Nahrung
+
+Es existieren zwei getrennte Nahrungssysteme.
+
+#### Spielernahrung
+
+Der Spieler benötigt Nahrung für längere Expeditionen und Reisen.
+
+#### Siedlungsnahrung
+
+Bewohner verbrauchen Nahrung aus dem Lager ihrer Siedlung.
+
+Nahrungsmangel kann zu Unzufriedenheit, verringerter Produktivität, Abwanderung oder langfristig zum Tod von Bewohnern führen.
+
+### Ziel
+
+Der Spieler entwickelt sich vom Anführer einer kleinen Gruppe von Überlebenden zum Herrscher eines Netzwerks aus Siedlungen, Handelsrouten und Außenposten.
+
+
 ### Die Welt
 
 Die Welt ist nicht leer.
