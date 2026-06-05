@@ -7,6 +7,7 @@ signal hex_selected(
 	buildable: bool,
 	has_building: bool,
 	building_name: String,
+	assigned_workers: int,
 	own_forest: bool,
 	adjacent_forests: int,
 	wood_production: int,
@@ -24,6 +25,7 @@ signal stone_changed(amount: int)
 signal housing_changed(amount: int)
 signal population_changed(amount: int)
 signal free_housing_changed(amount: int)
+signal work_changed(unemployed: int, lumberjacks: int, miners: int, workplaces: int, free_workplaces: int)
 signal message_changed(text: String)
 
 @export var radius: int = 6
@@ -50,6 +52,12 @@ var stone: int = 0
 var housing_capacity: int = 0
 var population: int = 0
 var free_housing: int = 0
+var unemployed_count: int = 0
+var lumberjack_count: int = 0
+var miner_count: int = 0
+var workplace_count: int = 0
+var assigned_workplace_count: int = 0
+var free_workplace_count: int = 0
 var residents: Array[Dictionary] = []
 var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
@@ -244,6 +252,7 @@ func _select_tile_under_mouse() -> void:
 			bool(tile_mesh.get_meta("buildable")),
 			bool(tile_mesh.get_meta("has_building")),
 			_get_tile_building_name(tile_mesh),
+			_get_tile_assigned_workers(tile_mesh),
 			_get_tile_own_forest(tile_mesh),
 			_get_tile_adjacent_forests(tile_mesh),
 			_get_tile_wood_production(tile_mesh),
@@ -325,6 +334,8 @@ func _create_building_definitions() -> Dictionary:
 			"housing": 2,
 			"production": 0,
 			"production_resource": "",
+			"workplaces": 0,
+			"job_type": "",
 		},
 		"house": {
 			"name": "Wohnhaus",
@@ -333,6 +344,8 @@ func _create_building_definitions() -> Dictionary:
 			"housing": 2,
 			"production": 0,
 			"production_resource": "",
+			"workplaces": 0,
+			"job_type": "",
 		},
 		"lumberjack_hut": {
 			"name": "Holzfällerhütte",
@@ -341,6 +354,8 @@ func _create_building_definitions() -> Dictionary:
 			"housing": 0,
 			"production": 1,
 			"production_resource": "Holz",
+			"workplaces": 1,
+			"job_type": "Holzfäller",
 		},
 		"stone_mine": {
 			"name": "Steinmine",
@@ -349,6 +364,8 @@ func _create_building_definitions() -> Dictionary:
 			"housing": 0,
 			"production": 1,
 			"production_resource": "Stein",
+			"workplaces": 1,
+			"job_type": "Bergarbeiter",
 		},
 	}
 
@@ -375,6 +392,20 @@ func _get_building_housing(building_type: String) -> int:
 	if definition.is_empty():
 		return 0
 	return int(definition["housing"])
+
+
+func _get_building_workplaces(building_type: String) -> int:
+	var definition: Dictionary = _get_building_definition(building_type)
+	if definition.is_empty():
+		return 0
+	return int(definition["workplaces"])
+
+
+func _get_building_job_type(building_type: String) -> String:
+	var definition: Dictionary = _get_building_definition(building_type)
+	if definition.is_empty():
+		return ""
+	return String(definition["job_type"])
 
 
 func _get_building_production(building_type: String) -> int:
@@ -462,6 +493,8 @@ func _place_starting_village_center() -> void:
 	center_tile.set_meta("building_type", "village_center")
 	center_tile.set_meta("nearest_village_center_coords", Vector2i(0, 0))
 	center_tile.set_meta("resident_capacity", _get_building_housing("village_center"))
+	center_tile.set_meta("workplace_count", _get_building_workplaces("village_center"))
+	center_tile.set_meta("assigned_workers", 0)
 	village_center_tile = center_tile
 
 
@@ -534,7 +567,11 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	tile.set_meta("own_forest", own_forest)
 	tile.set_meta("adjacent_forests", adjacent_forests)
 	tile.set_meta("lumberjack_production", production)
+	tile.set_meta("workplace_count", _get_building_workplaces("lumberjack_hut"))
+	tile.set_meta("job_type", _get_building_job_type("lumberjack_hut"))
+	tile.set_meta("assigned_workers", 0)
 	lumberjack_hut_tiles.append(tile)
+	_reassign_workers()
 
 
 func _place_house(tile: MeshInstance3D) -> void:
@@ -555,6 +592,8 @@ func _place_house(tile: MeshInstance3D) -> void:
 	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
 	tile.set_meta("resident_capacity", _get_building_housing("house"))
 	tile.set_meta("current_residents", 0)
+	tile.set_meta("workplace_count", _get_building_workplaces("house"))
+	tile.set_meta("assigned_workers", 0)
 	_recalculate_housing_capacity()
 
 
@@ -581,7 +620,11 @@ func _place_stone_mine(tile: MeshInstance3D) -> void:
 	tile.set_meta("own_stone", own_stone)
 	tile.set_meta("adjacent_stones", adjacent_stones)
 	tile.set_meta("stone_mine_production", production)
+	tile.set_meta("workplace_count", _get_building_workplaces("stone_mine"))
+	tile.set_meta("job_type", _get_building_job_type("stone_mine"))
+	tile.set_meta("assigned_workers", 0)
 	stone_mine_tiles.append(tile)
+	_reassign_workers()
 
 
 func _add_wood(amount: int) -> void:
@@ -598,6 +641,7 @@ func _initialize_population() -> void:
 func _set_population(amount: int) -> void:
 	population = min(amount, housing_capacity)
 	_sync_resident_data_to_population()
+	_reassign_workers()
 	population_changed.emit(population)
 	_update_free_housing()
 
@@ -641,6 +685,67 @@ func _recalculate_housing_capacity() -> void:
 	housing_changed.emit(housing_capacity)
 	_clamp_population_to_housing()
 	_update_free_housing()
+
+
+func _reassign_workers() -> void:
+	_reset_worker_assignments()
+	workplace_count = lumberjack_hut_tiles.size() + stone_mine_tiles.size()
+	var available_workers: int = population
+
+	for tile in lumberjack_hut_tiles:
+		if available_workers <= 0:
+			break
+		tile.set_meta("assigned_workers", 1)
+		_assign_next_unemployed_resident("Holzfäller")
+		lumberjack_count += 1
+		assigned_workplace_count += 1
+		available_workers -= 1
+
+	for tile in stone_mine_tiles:
+		if available_workers <= 0:
+			break
+		tile.set_meta("assigned_workers", 1)
+		_assign_next_unemployed_resident("Bergarbeiter")
+		miner_count += 1
+		assigned_workplace_count += 1
+		available_workers -= 1
+
+	unemployed_count = population - assigned_workplace_count
+	if unemployed_count < 0:
+		unemployed_count = 0
+	free_workplace_count = workplace_count - assigned_workplace_count
+	if free_workplace_count < 0:
+		free_workplace_count = 0
+	work_changed.emit(unemployed_count, lumberjack_count, miner_count, workplace_count, free_workplace_count)
+
+
+func _reset_worker_assignments() -> void:
+	unemployed_count = population
+	lumberjack_count = 0
+	miner_count = 0
+	workplace_count = 0
+	assigned_workplace_count = 0
+	free_workplace_count = 0
+
+	for resident_index in range(residents.size()):
+		var resident_data: Dictionary = residents[resident_index] as Dictionary
+		resident_data["job"] = ""
+		residents[resident_index] = resident_data
+
+	for tile in lumberjack_hut_tiles:
+		tile.set_meta("assigned_workers", 0)
+
+	for tile in stone_mine_tiles:
+		tile.set_meta("assigned_workers", 0)
+
+
+func _assign_next_unemployed_resident(job_name: String) -> void:
+	for resident_index in range(residents.size()):
+		var resident_data: Dictionary = residents[resident_index] as Dictionary
+		if String(resident_data["job"]).is_empty():
+			resident_data["job"] = job_name
+			residents[resident_index] = resident_data
+			return
 
 
 func _run_production_cycle() -> void:
@@ -733,13 +838,29 @@ func _get_tile_adjacent_stones(tile: MeshInstance3D) -> int:
 	return 0
 
 
+func _get_tile_workplaces(tile: MeshInstance3D) -> int:
+	if tile.has_meta("workplace_count"):
+		return int(tile.get_meta("workplace_count"))
+	return 0
+
+
+func _get_tile_assigned_workers(tile: MeshInstance3D) -> int:
+	if tile.has_meta("assigned_workers"):
+		return int(tile.get_meta("assigned_workers"))
+	return 0
+
+
 func _get_tile_wood_production(tile: MeshInstance3D) -> int:
+	if _get_tile_assigned_workers(tile) <= 0:
+		return 0
 	if tile.has_meta("lumberjack_production"):
 		return int(tile.get_meta("lumberjack_production"))
 	return 0
 
 
 func _get_tile_stone_production(tile: MeshInstance3D) -> int:
+	if _get_tile_assigned_workers(tile) <= 0:
+		return 0
 	if tile.has_meta("stone_mine_production"):
 		return int(tile.get_meta("stone_mine_production"))
 	return 0
