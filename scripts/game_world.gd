@@ -5,6 +5,8 @@ extends Node3D
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
 @onready var stone_label: Label = $CanvasLayer/StoneLabel
 @onready var housing_label: Label = $CanvasLayer/HousingLabel
+@onready var population_label: Label = $CanvasLayer/PopulationLabel
+@onready var free_housing_label: Label = $CanvasLayer/FreeHousingLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
@@ -26,6 +28,8 @@ func _ready() -> void:
 	hex_grid.wood_changed.connect(_on_wood_changed)
 	hex_grid.stone_changed.connect(_on_stone_changed)
 	hex_grid.housing_changed.connect(_on_housing_changed)
+	hex_grid.population_changed.connect(_on_population_changed)
+	hex_grid.free_housing_changed.connect(_on_free_housing_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	lumberjack_button.pressed.connect(_on_lumberjack_button_pressed)
 	house_button.pressed.connect(_on_house_button_pressed)
@@ -35,6 +39,8 @@ func _ready() -> void:
 	_on_wood_changed(hex_grid.wood)
 	_on_stone_changed(hex_grid.stone)
 	_on_housing_changed(hex_grid.housing_capacity)
+	_on_population_changed(hex_grid.population)
+	_on_free_housing_changed(hex_grid.free_housing)
 	_on_selection_cleared()
 
 
@@ -134,6 +140,14 @@ func _on_stone_changed(amount: int) -> void:
 
 func _on_housing_changed(amount: int) -> void:
 	housing_label.text = "Wohnraum: %d" % amount
+
+
+func _on_population_changed(amount: int) -> void:
+	population_label.text = "Bewohner: %d" % amount
+
+
+func _on_free_housing_changed(amount: int) -> void:
+	free_housing_label.text = "Freier Wohnraum: %d" % amount
 
 
 func _on_message_changed(text: String) -> void:
