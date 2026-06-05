@@ -3,6 +3,7 @@ extends Node3D
 @onready var hex_grid: Node3D = $HexGrid
 @onready var build_mode_label: Label = $CanvasLayer/BuildModeLabel
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
+@onready var stone_label: Label = $CanvasLayer/StoneLabel
 @onready var housing_label: Label = $CanvasLayer/HousingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
@@ -18,10 +19,12 @@ func _ready() -> void:
 	hex_grid.build_mode_changed.connect(_on_build_mode_changed)
 	hex_grid.selected_building_changed.connect(_on_selected_building_changed)
 	hex_grid.wood_changed.connect(_on_wood_changed)
+	hex_grid.stone_changed.connect(_on_stone_changed)
 	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	_on_build_mode_changed(false)
 	_on_wood_changed(hex_grid.wood)
+	_on_stone_changed(hex_grid.stone)
 	_on_housing_changed(hex_grid.housing_capacity)
 	_on_selection_cleared()
 
@@ -35,7 +38,10 @@ func _on_hex_selected(
 	building_name: String,
 	own_forest: bool,
 	adjacent_forests: int,
-	production: int,
+	wood_production: int,
+	own_stone: bool,
+	adjacent_stones: int,
+	stone_production: int,
 	in_settlement_area: bool,
 	village_center_distance: int
 ) -> void:
@@ -57,7 +63,13 @@ func _on_hex_selected(
 		var own_forest_text: String = "ja" if own_forest else "nein"
 		lines.append("Eigenes Wald-Hex: %s" % own_forest_text)
 		lines.append("Angrenzende Wälder: %d/6" % adjacent_forests)
-		lines.append("Produktion: %d Holz / 5 Sekunden" % production)
+		lines.append("Produktion: %d Holz / 5 Sekunden" % wood_production)
+
+	if has_building and building_name == "Steinmine":
+		var own_stone_text: String = "ja" if own_stone else "nein"
+		lines.append("Eigenes Stein-Hex: %s" % own_stone_text)
+		lines.append("Angrenzende Steine: %d/6" % adjacent_stones)
+		lines.append("Produktion: %d Stein / 5 Sekunden" % stone_production)
 
 	info_label.text = "\n".join(lines)
 	info_panel.visible = true
@@ -90,6 +102,10 @@ func _update_build_mode_label(enabled: bool) -> void:
 
 func _on_wood_changed(amount: int) -> void:
 	resource_label.text = "Holz: %d" % amount
+
+
+func _on_stone_changed(amount: int) -> void:
+	stone_label.text = "Stein: %d" % amount
 
 
 func _on_housing_changed(amount: int) -> void:
