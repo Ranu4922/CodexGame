@@ -54,6 +54,7 @@ offset_bottom = 132.0
 text = "Baumodus: AUS"
 
 [node name="SelectedBuildingLabel" type="Label" parent="CanvasLayer"]
+visible = false
 offset_left = 16.0
 offset_top = 128.0
 offset_right = 440.0
