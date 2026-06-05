@@ -284,6 +284,12 @@ func _try_place_selected_building(tile: MeshInstance3D) -> void:
 
 
 func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
+	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
+	var adjacent_forests: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Wald")
+	if not own_forest and adjacent_forests <= 0:
+		message_changed.emit("Holzfällerhütte benötigt mindestens 1 Wald-Hex in Reichweite.")
+		return
+
 	if wood < lumberjack_hut_wood_cost:
 		message_changed.emit("Nicht genug Holz. Holzfällerhütte kostet %d Holz." % lumberjack_hut_wood_cost)
 		return
@@ -306,6 +312,10 @@ func _try_place_house(tile: MeshInstance3D) -> void:
 
 
 func _try_place_stone_mine(tile: MeshInstance3D) -> void:
+	if String(tile.get_meta("tile_type")) != "Stein":
+		message_changed.emit("Steinmine kann nur auf einem Stein-Hex gebaut werden.")
+		return
+
 	if wood < stone_mine_wood_cost:
 		message_changed.emit("Nicht genug Holz. Steinmine kostet %d Holz." % stone_mine_wood_cost)
 		return
@@ -402,11 +412,7 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	tile.add_child(marker)
 	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
 	var adjacent_forests: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Wald")
-	var production: int = adjacent_forests
-	if own_forest:
-		production += 2
-	if production > 8:
-		production = 8
+	var production: int = 1
 
 	tile.set_meta("has_building", true)
 	tile.set_meta("building_name", "Holzfällerhütte")
@@ -453,11 +459,7 @@ func _place_stone_mine(tile: MeshInstance3D) -> void:
 	tile.add_child(marker)
 	var own_stone: bool = tile.get_meta("tile_type") == "Stein"
 	var adjacent_stones: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Stein")
-	var production: int = adjacent_stones
-	if own_stone:
-		production += 2
-	if production > 8:
-		production = 8
+	var production: int = 1
 
 	tile.set_meta("has_building", true)
 	tile.set_meta("building_name", "Steinmine")
