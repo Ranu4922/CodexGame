@@ -39,54 +39,61 @@ offset_right = 440.0
 offset_bottom = 76.0
 text = "Stein: 0"
 
-[node name="PopulationLabel" type="Label" parent="CanvasLayer"]
+[node name="FoodLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 72.0
 offset_right = 440.0
 offset_bottom = 104.0
-text = "Bewohner: 2 / Wohnraum 2"
+text = "Nahrung: 0"
 
-[node name="UnemployedLabel" type="Label" parent="CanvasLayer"]
+[node name="PopulationLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 100.0
 offset_right = 440.0
 offset_bottom = 132.0
-text = "Arbeitslos: 2"
+text = "Bewohner: 2 / Wohnraum 2"
 
-[node name="BuildModeLabel" type="Label" parent="CanvasLayer"]
+[node name="UnemployedLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 128.0
 offset_right = 440.0
 offset_bottom = 160.0
+text = "Arbeitslos: 2"
+
+[node name="BuildModeLabel" type="Label" parent="CanvasLayer"]
+offset_left = 16.0
+offset_top = 156.0
+offset_right = 440.0
+offset_bottom = 188.0
 text = "Baumodus: AUS"
 
 [node name="SelectedBuildingLabel" type="Label" parent="CanvasLayer"]
 visible = false
 offset_left = 16.0
-offset_top = 156.0
+offset_top = 184.0
 offset_right = 440.0
-offset_bottom = 188.0
+offset_bottom = 216.0
 text = "Ausgewähltes Gebäude: -"
 
 [node name="MessageLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
-offset_top = 184.0
+offset_top = 212.0
 offset_right = 760.0
-offset_bottom = 216.0
+offset_bottom = 244.0
 text = ""
 
 [node name="BuildMenu" type="PanelContainer" parent="CanvasLayer"]
 visible = false
 offset_left = 16.0
-offset_top = 218.0
+offset_top = 246.0
 offset_right = 240.0
-offset_bottom = 358.0
+offset_bottom = 414.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/BuildMenu"]
 offset_left = 7.0
 offset_top = 7.0
 offset_right = 217.0
-offset_bottom = 133.0
+offset_bottom = 161.0
 
 [node name="LumberjackButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
@@ -99,6 +106,10 @@ text = "Wohnhaus"
 [node name="StoneMineButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
 text = "Steinmine"
+
+[node name="BerryGathererButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
+layout_mode = 2
+text = "Beerensammler"
 
 [node name="InfoPanel" type="PanelContainer" parent="CanvasLayer"]
 visible = false
