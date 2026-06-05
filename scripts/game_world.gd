@@ -23,6 +23,14 @@ var selected_building_name: String = "-"
 var workplace_count: int = 0
 var assigned_workplace_count: int = 0
 var free_workplace_count: int = 0
+var building_workplaces: Dictionary = {
+	"lumberjack_hut": 1,
+	"stone_mine": 1,
+}
+var building_name_to_type: Dictionary = {
+	"Holzfällerhütte": "lumberjack_hut",
+	"Steinmine": "stone_mine",
+}
 
 
 func _ready() -> void:
@@ -85,8 +93,8 @@ func _on_hex_selected(
 	])
 
 	if has_building:
-		var building_workplaces: int = _get_workplaces_for_building_name(building_name)
-		lines.append("Arbeitsplätze: %d" % building_workplaces)
+		var building_workplace_count: int = _get_workplaces_for_building_name(building_name)
+		lines.append("Arbeitsplätze: %d" % building_workplace_count)
 
 	if has_building and building_name == "Holzfällerhütte":
 		var own_forest_text: String = "ja" if own_forest else "nein"
@@ -187,19 +195,17 @@ func _calculate_workplace_count() -> int:
 
 
 func _get_workplaces_for_building_type(building_type: String) -> int:
-	if building_type == "lumberjack_hut":
-		return 1
-	if building_type == "stone_mine":
-		return 1
-	return 0
+	if not building_workplaces.has(building_type):
+		return 0
+	return int(building_workplaces[building_type])
 
 
 func _get_workplaces_for_building_name(building_name: String) -> int:
-	if building_name == "Holzfällerhütte":
-		return 1
-	if building_name == "Steinmine":
-		return 1
-	return 0
+	if not building_name_to_type.has(building_name):
+		return 0
+
+	var building_type: String = String(building_name_to_type[building_name])
+	return _get_workplaces_for_building_type(building_type)
 
 
 func _on_message_changed(text: String) -> void:
