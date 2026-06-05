@@ -11,6 +11,7 @@ signal hex_selected(
 	own_forest: bool,
 	adjacent_forests: int,
 	wood_production: int,
+	food_production: int,
 	own_stone: bool,
 	adjacent_stones: int,
 	stone_production: int,
@@ -22,6 +23,7 @@ signal build_mode_changed(enabled: bool)
 signal selected_building_changed(display_name: String)
 signal wood_changed(amount: int)
 signal stone_changed(amount: int)
+signal food_changed(amount: int)
 signal housing_changed(amount: int)
 signal population_changed(amount: int)
 signal free_housing_changed(amount: int)
@@ -34,10 +36,12 @@ signal message_changed(text: String)
 @export var generation_seed: int = 12345
 @export var starting_wood: int = 20
 @export var starting_stone: int = 0
+@export var starting_food: int = 0
 @export var starting_population: int = 2
 @export var lumberjack_hut_wood_cost: int = 5
 @export var house_wood_cost: int = 10
 @export var stone_mine_wood_cost: int = 10
+@export var berry_gatherer_wood_cost: int = 0
 @export var production_interval: float = 5.0
 @export var village_center_influence_radius: int = 3
 
@@ -49,12 +53,14 @@ var tile_materials: Dictionary = {}
 var build_mode: bool = false
 var wood: int = 0
 var stone: int = 0
+var food: int = 0
 var housing_capacity: int = 0
 var population: int = 0
 var free_housing: int = 0
 var unemployed_count: int = 0
 var lumberjack_count: int = 0
 var miner_count: int = 0
+var berry_gatherer_count: int = 0
 var workplace_count: int = 0
 var assigned_workplace_count: int = 0
 var free_workplace_count: int = 0
@@ -62,6 +68,7 @@ var residents: Array[Dictionary] = []
 var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var stone_mine_tiles: Array[MeshInstance3D] = []
+var berry_gatherer_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
 var village_center_tile: MeshInstance3D
 var show_influence_area: bool = false
@@ -72,6 +79,7 @@ var building_definitions: Dictionary = {}
 func _ready() -> void:
 	wood = starting_wood
 	stone = starting_stone
+	food = starting_food
 	building_definitions = _create_building_definitions()
 	tile_materials = {
 		"Gras": _make_material(Color(0.22, 0.55, 0.32)),
@@ -91,7 +99,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if lumberjack_hut_tiles.is_empty() and stone_mine_tiles.is_empty():
+	if lumberjack_hut_tiles.is_empty() and stone_mine_tiles.is_empty() and berry_gatherer_tiles.is_empty():
 		return
 
 	production_timer += delta
@@ -207,6 +215,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_3:
 		select_building("stone_mine")
 
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_4:
+		select_building("berry_gatherer")
+
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		build_mode = false
 		build_mode_changed.emit(build_mode)
@@ -256,6 +267,7 @@ func _select_tile_under_mouse() -> void:
 			_get_tile_own_forest(tile_mesh),
 			_get_tile_adjacent_forests(tile_mesh),
 			_get_tile_wood_production(tile_mesh),
+			_get_tile_food_production(tile_mesh),
 			_get_tile_own_stone(tile_mesh),
 			_get_tile_adjacent_stones(tile_mesh),
 			_get_tile_stone_production(tile_mesh),
@@ -302,6 +314,10 @@ func _try_place_selected_building(tile: MeshInstance3D) -> void:
 
 	if selected_building_type == "stone_mine":
 		_try_place_stone_mine(tile)
+		return
+
+	if selected_building_type == "berry_gatherer":
+		_try_place_berry_gatherer(tile)
 		return
 
 	_try_place_lumberjack_hut(tile)
@@ -356,6 +372,16 @@ func _create_building_definitions() -> Dictionary:
 			"production_resource": "Holz",
 			"workplaces": 1,
 			"job_type": "Holzfäller",
+		},
+		"berry_gatherer": {
+			"name": "Beerensammler",
+			"build_costs": {"wood": berry_gatherer_wood_cost, "stone": 0},
+			"allowed_tile_types": ["Wald"],
+			"housing": 0,
+			"production": 1,
+			"production_resource": "Nahrung",
+			"workplaces": 1,
+			"job_type": "Beerensammler",
 		},
 		"stone_mine": {
 			"name": "Steinmine",
@@ -467,6 +493,22 @@ func _try_place_stone_mine(tile: MeshInstance3D) -> void:
 	wood_changed.emit(wood)
 	_place_stone_mine(tile)
 	message_changed.emit("Steinmine gebaut: -%d Holz." % wood_cost)
+
+
+func _try_place_berry_gatherer(tile: MeshInstance3D) -> void:
+	if not _is_tile_type_allowed_for_building(tile, "berry_gatherer"):
+		message_changed.emit("Benötigt Wald")
+		return
+
+	var wood_cost: int = _get_building_wood_cost("berry_gatherer")
+	if wood < wood_cost:
+		message_changed.emit("Nicht genug Holz. Beerensammler kostet %d Holz." % wood_cost)
+		return
+
+	wood -= wood_cost
+	wood_changed.emit(wood)
+	_place_berry_gatherer(tile)
+	message_changed.emit("Beerensammler gebaut.")
 
 
 func _place_starting_village_center() -> void:
@@ -627,6 +669,36 @@ func _place_stone_mine(tile: MeshInstance3D) -> void:
 	_reassign_workers()
 
 
+func _place_berry_gatherer(tile: MeshInstance3D) -> void:
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "Beerensammler"
+
+	var marker_size: float = hex_size * 1.05
+	var mesh: BoxMesh = BoxMesh.new()
+	mesh.size = Vector3(marker_size, hex_size * 0.75, marker_size)
+	marker.mesh = mesh
+	marker.material_override = _make_material(Color(0.62, 0.12, 0.26))
+	marker.position = Vector3(0.0, tile_height + hex_size * 0.375, 0.0)
+
+	tile.add_child(marker)
+	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
+	var adjacent_forests: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Wald")
+	var production: int = _get_building_production("berry_gatherer")
+
+	tile.set_meta("has_building", true)
+	tile.set_meta("building_name", _get_building_display_name("berry_gatherer"))
+	tile.set_meta("building_type", "berry_gatherer")
+	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
+	tile.set_meta("own_forest", own_forest)
+	tile.set_meta("adjacent_forests", adjacent_forests)
+	tile.set_meta("food_production", production)
+	tile.set_meta("workplace_count", _get_building_workplaces("berry_gatherer"))
+	tile.set_meta("job_type", _get_building_job_type("berry_gatherer"))
+	tile.set_meta("assigned_workers", 0)
+	berry_gatherer_tiles.append(tile)
+	_reassign_workers()
+
+
 func _add_wood(amount: int) -> void:
 	wood += amount
 	wood_changed.emit(wood)
@@ -689,7 +761,7 @@ func _recalculate_housing_capacity() -> void:
 
 func _reassign_workers() -> void:
 	_reset_worker_assignments()
-	workplace_count = lumberjack_hut_tiles.size() + stone_mine_tiles.size()
+	workplace_count = lumberjack_hut_tiles.size() + stone_mine_tiles.size() + berry_gatherer_tiles.size()
 	var available_workers: int = population
 
 	for tile in lumberjack_hut_tiles:
@@ -710,6 +782,15 @@ func _reassign_workers() -> void:
 		assigned_workplace_count += 1
 		available_workers -= 1
 
+	for tile in berry_gatherer_tiles:
+		if available_workers <= 0:
+			break
+		tile.set_meta("assigned_workers", 1)
+		_assign_next_unemployed_resident("Beerensammler")
+		berry_gatherer_count += 1
+		assigned_workplace_count += 1
+		available_workers -= 1
+
 	unemployed_count = population - assigned_workplace_count
 	if unemployed_count < 0:
 		unemployed_count = 0
@@ -723,6 +804,7 @@ func _reset_worker_assignments() -> void:
 	unemployed_count = population
 	lumberjack_count = 0
 	miner_count = 0
+	berry_gatherer_count = 0
 	workplace_count = 0
 	assigned_workplace_count = 0
 	free_workplace_count = 0
@@ -738,6 +820,9 @@ func _reset_worker_assignments() -> void:
 	for tile in stone_mine_tiles:
 		tile.set_meta("assigned_workers", 0)
 
+	for tile in berry_gatherer_tiles:
+		tile.set_meta("assigned_workers", 0)
+
 
 func _assign_next_unemployed_resident(job_name: String) -> void:
 	for resident_index in range(residents.size()):
@@ -751,6 +836,7 @@ func _assign_next_unemployed_resident(job_name: String) -> void:
 func _run_production_cycle() -> void:
 	var produced_wood: int = 0
 	var produced_stone: int = 0
+	var produced_food: int = 0
 
 	for tile in lumberjack_hut_tiles:
 		produced_wood += _get_tile_wood_production(tile)
@@ -758,7 +844,10 @@ func _run_production_cycle() -> void:
 	for tile in stone_mine_tiles:
 		produced_stone += _get_tile_stone_production(tile)
 
-	if produced_wood <= 0 and produced_stone <= 0:
+	for tile in berry_gatherer_tiles:
+		produced_food += _get_tile_food_production(tile)
+
+	if produced_wood <= 0 and produced_stone <= 0 and produced_food <= 0:
 		return
 
 	if produced_wood > 0:
@@ -769,11 +858,17 @@ func _run_production_cycle() -> void:
 		stone += produced_stone
 		stone_changed.emit(stone)
 
+	if produced_food > 0:
+		food += produced_food
+		food_changed.emit(food)
+
 	var message_parts: PackedStringArray = PackedStringArray()
 	if produced_wood > 0:
 		message_parts.append("+%d Holz" % produced_wood)
 	if produced_stone > 0:
 		message_parts.append("+%d Stein" % produced_stone)
+	if produced_food > 0:
+		message_parts.append("+%d Nahrung" % produced_food)
 	message_changed.emit(", ".join(message_parts))
 
 
@@ -863,6 +958,14 @@ func _get_tile_stone_production(tile: MeshInstance3D) -> int:
 		return 0
 	if tile.has_meta("stone_mine_production"):
 		return int(tile.get_meta("stone_mine_production"))
+	return 0
+
+
+func _get_tile_food_production(tile: MeshInstance3D) -> int:
+	if _get_tile_assigned_workers(tile) <= 0:
+		return 0
+	if tile.has_meta("food_production"):
+		return int(tile.get_meta("food_production"))
 	return 0
 
 
