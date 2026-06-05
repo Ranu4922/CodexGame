@@ -51,7 +51,7 @@ var stone_mine_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
 var village_center_tile: MeshInstance3D
 var show_influence_area: bool = false
-var selected_building_type: String = "lumberjack_hut"
+var selected_building_type: String = ""
 
 
 func _ready() -> void:
@@ -69,6 +69,7 @@ func _ready() -> void:
 	_generate_grid()
 	_place_starting_village_center()
 	_update_village_center_influence()
+	selected_building_changed.emit("-")
 
 
 func _process(delta: float) -> void:
@@ -180,18 +181,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		_add_wood(10)
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_1:
-		selected_building_type = "lumberjack_hut"
-		selected_building_changed.emit("Holzfällerhütte")
+		select_building("lumberjack_hut")
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_2:
-		selected_building_type = "house"
-		selected_building_changed.emit("Wohnhaus")
+		select_building("house")
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_3:
-		selected_building_type = "stone_mine"
-		selected_building_changed.emit("Steinmine")
+		select_building("stone_mine")
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		build_mode = false
+		build_mode_changed.emit(build_mode)
+		clear_selected_building()
 		_clear_selection()
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_V:
@@ -260,6 +261,10 @@ func _clear_selection() -> void:
 
 
 func _try_place_selected_building(tile: MeshInstance3D) -> void:
+	if selected_building_type.is_empty():
+		message_changed.emit("Kein Gebäude ausgewählt.")
+		return
+
 	if not tile.get_meta("buildable"):
 		message_changed.emit("Kann hier nicht bauen: Feld ist nicht bebaubar.")
 		return
@@ -281,6 +286,26 @@ func _try_place_selected_building(tile: MeshInstance3D) -> void:
 		return
 
 	_try_place_lumberjack_hut(tile)
+
+
+func select_building(building_type: String) -> void:
+	selected_building_type = building_type
+	selected_building_changed.emit(_get_building_display_name(building_type))
+
+
+func clear_selected_building() -> void:
+	selected_building_type = ""
+	selected_building_changed.emit("-")
+
+
+func _get_building_display_name(building_type: String) -> String:
+	if building_type == "lumberjack_hut":
+		return "Holzfällerhütte"
+	if building_type == "house":
+		return "Wohnhaus"
+	if building_type == "stone_mine":
+		return "Steinmine"
+	return "-"
 
 
 func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
