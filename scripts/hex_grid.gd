@@ -9,7 +9,10 @@ signal hex_selected(
 	building_name: String,
 	own_forest: bool,
 	adjacent_forests: int,
-	production: int,
+	wood_production: int,
+	own_stone: bool,
+	adjacent_stones: int,
+	stone_production: int,
 	in_settlement_area: bool,
 	village_center_distance: int
 )
@@ -17,6 +20,7 @@ signal selection_cleared
 signal build_mode_changed(enabled: bool)
 signal selected_building_changed(display_name: String)
 signal wood_changed(amount: int)
+signal stone_changed(amount: int)
 signal housing_changed(amount: int)
 signal message_changed(text: String)
 
@@ -25,8 +29,10 @@ signal message_changed(text: String)
 @export var tile_height: float = 0.08
 @export var generation_seed: int = 12345
 @export var starting_wood: int = 20
+@export var starting_stone: int = 0
 @export var lumberjack_hut_wood_cost: int = 5
 @export var house_wood_cost: int = 10
+@export var stone_mine_wood_cost: int = 10
 @export var production_interval: float = 5.0
 @export var village_center_influence_radius: int = 3
 
@@ -37,9 +43,11 @@ var influence_marker_material: StandardMaterial3D
 var tile_materials: Dictionary = {}
 var build_mode: bool = false
 var wood: int = 0
+var stone: int = 0
 var housing_capacity: int = 0
 var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
+var stone_mine_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
 var village_center_tile: MeshInstance3D
 var show_influence_area: bool = false
@@ -48,6 +56,7 @@ var selected_building_type: String = "lumberjack_hut"
 
 func _ready() -> void:
 	wood = starting_wood
+	stone = starting_stone
 	tile_materials = {
 		"Gras": _make_material(Color(0.22, 0.55, 0.32)),
 		"Wald": _make_material(Color(0.08, 0.32, 0.16)),
@@ -55,15 +64,14 @@ func _ready() -> void:
 		"Stein": _make_material(Color(0.45, 0.46, 0.43)),
 	}
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
-	building_material = _make_material(Color(0.46, 0.25, 0.10))
-	influence_marker_material = _make_material(Color(0.90, 0.82, 0.20))
+	building_material = _make_material(Color(0.46, 0.25, 0.10))	influence_marker_material = _make_material(Color(0.90, 0.82, 0.20))
 	_generate_grid()
 	_place_starting_village_center()
 	_update_village_center_influence()
 
 
 func _process(delta: float) -> void:
-	if lumberjack_hut_tiles.is_empty():
+	if lumberjack_hut_tiles.is_empty() and stone_mine_tiles.is_empty():
 		return
 
 	production_timer += delta
@@ -166,7 +174,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
 		build_mode = not build_mode
 		build_mode_changed.emit(build_mode)
-		print("Baumodus: %s" % ("an" if build_mode else "aus"))
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		_add_wood(10)
@@ -178,6 +185,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_2:
 		selected_building_type = "house"
 		selected_building_changed.emit("Wohnhaus")
+
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_3:
+		selected_building_type = "stone_mine"
+		selected_building_changed.emit("Steinmine")
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		_clear_selection()
@@ -223,7 +234,10 @@ func _select_tile_under_mouse() -> void:
 			_get_tile_building_name(tile_mesh),
 			_get_tile_own_forest(tile_mesh),
 			_get_tile_adjacent_forests(tile_mesh),
-			_get_tile_production(tile_mesh),
+			_get_tile_wood_production(tile_mesh),
+			_get_tile_own_stone(tile_mesh),
+			_get_tile_adjacent_stones(tile_mesh),
+			_get_tile_stone_production(tile_mesh),
 			_get_tile_in_settlement_area(tile_mesh),
 			_get_tile_village_center_distance(tile_mesh)
 		)
@@ -261,6 +275,10 @@ func _try_place_selected_building(tile: MeshInstance3D) -> void:
 		_try_place_house(tile)
 		return
 
+	if selected_building_type == "stone_mine":
+		_try_place_stone_mine(tile)
+		return
+
 	_try_place_lumberjack_hut(tile)
 
 
@@ -284,6 +302,17 @@ func _try_place_house(tile: MeshInstance3D) -> void:
 	wood_changed.emit(wood)
 	_place_house(tile)
 	message_changed.emit("Wohnhaus gebaut: -%d Holz." % house_wood_cost)
+
+
+func _try_place_stone_mine(tile: MeshInstance3D) -> void:
+	if wood < stone_mine_wood_cost:
+		message_changed.emit("Nicht genug Holz. Steinmine kostet %d Holz." % stone_mine_wood_cost)
+		return
+
+	wood -= stone_mine_wood_cost
+	wood_changed.emit(wood)
+	_place_stone_mine(tile)
+	message_changed.emit("Steinmine gebaut: -%d Holz." % stone_mine_wood_cost)
 
 
 func _place_starting_village_center() -> void:
@@ -324,12 +353,7 @@ func _update_village_center_influence() -> void:
 			continue
 
 		var tile: MeshInstance3D = tile_variant as MeshInstance3D
-		var distance: int = _hex_distance(
-			center_q,
-			center_r,
-			int(tile.get_meta("q")),
-			int(tile.get_meta("r"))
-		)
+		var distance: int = _hex_distance(center_q, center_r, int(tile.get_meta("q")), int(tile.get_meta("r")))
 		var in_area: bool = distance <= village_center_influence_radius
 		tile.set_meta("village_center_distance", distance)
 		tile.set_meta("in_settlement_area", in_area)
@@ -376,7 +400,7 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 
 	tile.add_child(marker)
 	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
-	var adjacent_forests: int = _count_adjacent_forests(int(tile.get_meta("q")), int(tile.get_meta("r")))
+	var adjacent_forests: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Wald")
 	var production: int = adjacent_forests
 	if own_forest:
 		production += 2
@@ -414,6 +438,36 @@ func _place_house(tile: MeshInstance3D) -> void:
 	_recalculate_housing_capacity()
 
 
+func _place_stone_mine(tile: MeshInstance3D) -> void:
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "Steinmine"
+
+	var marker_size: float = hex_size * 1.15
+	var mesh: BoxMesh = BoxMesh.new()
+	mesh.size = Vector3(marker_size, hex_size * 0.95, marker_size)
+	marker.mesh = mesh
+	marker.material_override = _make_material(Color(0.36, 0.36, 0.38))
+	marker.position = Vector3(0.0, tile_height + hex_size * 0.475, 0.0)
+
+	tile.add_child(marker)
+	var own_stone: bool = tile.get_meta("tile_type") == "Stein"
+	var adjacent_stones: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Stein")
+	var production: int = adjacent_stones
+	if own_stone:
+		production += 2
+	if production > 8:
+		production = 8
+
+	tile.set_meta("has_building", true)
+	tile.set_meta("building_name", "Steinmine")
+	tile.set_meta("building_type", "stone_mine")
+	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
+	tile.set_meta("own_stone", own_stone)
+	tile.set_meta("adjacent_stones", adjacent_stones)
+	tile.set_meta("stone_mine_production", production)
+	stone_mine_tiles.append(tile)
+
+
 func _add_wood(amount: int) -> void:
 	wood += amount
 	wood_changed.emit(wood)
@@ -437,19 +491,34 @@ func _recalculate_housing_capacity() -> void:
 
 func _run_production_cycle() -> void:
 	var produced_wood: int = 0
+	var produced_stone: int = 0
 
 	for tile in lumberjack_hut_tiles:
-		produced_wood += _get_tile_production(tile)
+		produced_wood += _get_tile_wood_production(tile)
 
-	if produced_wood <= 0:
+	for tile in stone_mine_tiles:
+		produced_stone += _get_tile_stone_production(tile)
+
+	if produced_wood <= 0 and produced_stone <= 0:
 		return
 
-	wood += produced_wood
-	wood_changed.emit(wood)
-	message_changed.emit("+%d Holz" % produced_wood)
+	if produced_wood > 0:
+		wood += produced_wood
+		wood_changed.emit(wood)
+
+	if produced_stone > 0:
+		stone += produced_stone
+		stone_changed.emit(stone)
+
+	var message_parts: PackedStringArray = PackedStringArray()
+	if produced_wood > 0:
+		message_parts.append("+%d Holz" % produced_wood)
+	if produced_stone > 0:
+		message_parts.append("+%d Stein" % produced_stone)
+	message_changed.emit(", ".join(message_parts))
 
 
-func _count_adjacent_forests(q: int, r: int) -> int:
+func _count_adjacent_tiles_of_type(q: int, r: int, tile_type: String) -> int:
 	var adjacent_offsets: Array[Vector2i] = [
 		Vector2i(1, 0),
 		Vector2i(1, -1),
@@ -458,19 +527,25 @@ func _count_adjacent_forests(q: int, r: int) -> int:
 		Vector2i(-1, 1),
 		Vector2i(0, 1),
 	]
-	var forest_count: int = 0
+	var matching_count: int = 0
 
 	for offset in adjacent_offsets:
 		var neighbor: Variant = tiles_by_coords.get(_coords_key(q + offset.x, r + offset.y))
-		if neighbor is MeshInstance3D and neighbor.get_meta("tile_type") == "Wald":
-			forest_count += 1
+		if neighbor is MeshInstance3D and neighbor.get_meta("tile_type") == tile_type:
+			matching_count += 1
 
-	return forest_count
+	return matching_count
 
 
 func _get_tile_own_forest(tile: MeshInstance3D) -> bool:
 	if tile.has_meta("own_forest"):
 		return bool(tile.get_meta("own_forest"))
+	return false
+
+
+func _get_tile_own_stone(tile: MeshInstance3D) -> bool:
+	if tile.has_meta("own_stone"):
+		return bool(tile.get_meta("own_stone"))
 	return false
 
 
@@ -498,9 +573,21 @@ func _get_tile_adjacent_forests(tile: MeshInstance3D) -> int:
 	return 0
 
 
-func _get_tile_production(tile: MeshInstance3D) -> int:
+func _get_tile_adjacent_stones(tile: MeshInstance3D) -> int:
+	if tile.has_meta("adjacent_stones"):
+		return int(tile.get_meta("adjacent_stones"))
+	return 0
+
+
+func _get_tile_wood_production(tile: MeshInstance3D) -> int:
 	if tile.has_meta("lumberjack_production"):
 		return int(tile.get_meta("lumberjack_production"))
+	return 0
+
+
+func _get_tile_stone_production(tile: MeshInstance3D) -> int:
+	if tile.has_meta("stone_mine_production"):
+		return int(tile.get_meta("stone_mine_production"))
 	return 0
 
 
@@ -511,10 +598,7 @@ func _coords_key(q: int, r: int) -> String:
 func _get_nearest_village_center_coords() -> Vector2i:
 	if village_center_tile == null:
 		return Vector2i.ZERO
-	return Vector2i(
-		int(village_center_tile.get_meta("q")),
-		int(village_center_tile.get_meta("r"))
-	)
+	return Vector2i(int(village_center_tile.get_meta("q")), int(village_center_tile.get_meta("r")))
 
 
 func _hex_distance(from_q: int, from_r: int, to_q: int, to_r: int) -> int:
