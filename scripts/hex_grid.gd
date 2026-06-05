@@ -64,7 +64,8 @@ func _ready() -> void:
 		"Stein": _make_material(Color(0.45, 0.46, 0.43)),
 	}
 	selected_material = _make_material(Color(0.95, 0.78, 0.25))
-	building_material = _make_material(Color(0.46, 0.25, 0.10))	influence_marker_material = _make_material(Color(0.90, 0.82, 0.20))
+	building_material = _make_material(Color(0.46, 0.25, 0.10))
+	influence_marker_material = _make_material(Color(0.90, 0.82, 0.20))
 	_generate_grid()
 	_place_starting_village_center()
 	_update_village_center_influence()
