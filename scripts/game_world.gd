@@ -4,14 +4,8 @@ extends Node3D
 @onready var build_mode_label: Label = $CanvasLayer/BuildModeLabel
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
 @onready var stone_label: Label = $CanvasLayer/StoneLabel
-@onready var housing_label: Label = $CanvasLayer/HousingLabel
 @onready var population_label: Label = $CanvasLayer/PopulationLabel
-@onready var free_housing_label: Label = $CanvasLayer/FreeHousingLabel
-@onready var workplace_label: Label = $CanvasLayer/WorkplaceLabel
-@onready var free_workplace_label: Label = $CanvasLayer/FreeWorkplaceLabel
 @onready var unemployed_label: Label = $CanvasLayer/UnemployedLabel
-@onready var lumberjack_worker_label: Label = $CanvasLayer/LumberjackWorkerLabel
-@onready var miner_worker_label: Label = $CanvasLayer/MinerWorkerLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
@@ -23,13 +17,11 @@ extends Node3D
 
 var message_version: int = 0
 var selected_building_name: String = "-"
+var current_population: int = 0
+var current_housing_capacity: int = 0
 var building_workplaces: Dictionary = {
-	"lumberjack_hut": 1,
-	"stone_mine": 1,
-}
-var building_name_to_type: Dictionary = {
-	"Holzfällerhütte": "lumberjack_hut",
-	"Steinmine": "stone_mine",
+	"Holzfällerhütte": 1,
+	"Steinmine": 1,
 }
 var info_panel_resize_version: int = 0
 var info_panel_position: Vector2 = Vector2(16.0, 452.0)
@@ -48,19 +40,18 @@ func _ready() -> void:
 	hex_grid.stone_changed.connect(_on_stone_changed)
 	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.population_changed.connect(_on_population_changed)
-	hex_grid.free_housing_changed.connect(_on_free_housing_changed)
 	hex_grid.work_changed.connect(_on_work_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	lumberjack_button.pressed.connect(_on_lumberjack_button_pressed)
 	house_button.pressed.connect(_on_house_button_pressed)
 	stone_mine_button.pressed.connect(_on_stone_mine_button_pressed)
+	current_population = hex_grid.population
+	current_housing_capacity = hex_grid.housing_capacity
 	_on_build_mode_changed(false)
 	_on_selected_building_changed("-")
 	_on_wood_changed(hex_grid.wood)
 	_on_stone_changed(hex_grid.stone)
-	_on_housing_changed(hex_grid.housing_capacity)
-	_on_population_changed(hex_grid.population)
-	_on_free_housing_changed(hex_grid.free_housing)
+	_update_population_housing_label()
 	_on_work_changed(
 		hex_grid.unemployed_count,
 		hex_grid.lumberjack_count,
@@ -237,37 +228,27 @@ func _on_stone_changed(amount: int) -> void:
 
 
 func _on_housing_changed(amount: int) -> void:
-	housing_label.text = "Wohnraum: %d" % amount
+	current_housing_capacity = amount
+	_update_population_housing_label()
 
 
 func _on_population_changed(amount: int) -> void:
-	population_label.text = "Bewohner: %d" % amount
+	current_population = amount
+	_update_population_housing_label()
 
 
-func _on_free_housing_changed(amount: int) -> void:
-	free_housing_label.text = "Freier Wohnraum: %d" % amount
+func _update_population_housing_label() -> void:
+	population_label.text = "Bewohner: %d / Wohnraum %d" % [current_population, current_housing_capacity]
 
 
-func _on_work_changed(unemployed: int, lumberjacks: int, miners: int, workplaces: int, free_workplaces: int) -> void:
-	workplace_label.text = "Arbeitsplätze: %d" % workplaces
-	free_workplace_label.text = "Freie Arbeitsplätze: %d" % free_workplaces
+func _on_work_changed(unemployed: int, _lumberjacks: int, _miners: int, _workplaces: int, _free_workplaces: int) -> void:
 	unemployed_label.text = "Arbeitslos: %d" % unemployed
-	lumberjack_worker_label.text = "Holzfäller: %d" % lumberjacks
-	miner_worker_label.text = "Bergarbeiter: %d" % miners
-
-
-func _get_workplaces_for_building_type(building_type: String) -> int:
-	if not building_workplaces.has(building_type):
-		return 0
-	return int(building_workplaces[building_type])
 
 
 func _get_workplaces_for_building_name(building_name: String) -> int:
-	if not building_name_to_type.has(building_name):
+	if not building_workplaces.has(building_name):
 		return 0
-
-	var building_type: String = String(building_name_to_type[building_name])
-	return _get_workplaces_for_building_type(building_type)
+	return int(building_workplaces[building_name])
 
 
 func _on_message_changed(text: String) -> void:
