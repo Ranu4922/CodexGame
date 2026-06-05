@@ -67,6 +67,20 @@ Durch Erkundung, Besiedlung, Handel und Verteidigung wird die verlorene Welt Sch
 
 ---
 
+## Grafikstil
+
+Das Spiel verwendet einen stilisierten Low-Poly-3D-Look.
+
+Die Welt basiert weiterhin auf Hex-Feldern.
+
+Die Kamera bleibt in einer schrägen Vogelperspektive.
+
+Gebäude, Bewohner, Monster und Ressourcen werden als einfache Low-Poly-3D-Modelle dargestellt.
+
+Der Fokus liegt auf Übersichtlichkeit, guter Performance und einer lebendigen Welt.
+
+---
+
 ## Kern-Gameplay
 
 Gameplay-Schleife:
