@@ -31,10 +31,10 @@ var building_name_to_type: Dictionary = {
 	"Holzfällerhütte": "lumberjack_hut",
 	"Steinmine": "stone_mine",
 }
+var info_panel_resize_version: int = 0
 var info_panel_position: Vector2 = Vector2(16.0, 452.0)
 var info_panel_padding: float = 12.0
 var info_panel_min_width: float = 300.0
-var info_panel_min_height: float = 80.0
 var info_panel_line_spacing: int = 4
 
 
@@ -114,15 +114,16 @@ func _on_hex_selected(
 		lines.append("Angrenzende Steine: %d/6" % adjacent_stones)
 		lines.append("Produktion: %d Stein / 5 Sekunden" % stone_production)
 
-	info_label.text = "\n".join(lines)
-	_resize_info_panel_to_content()
-	info_panel.visible = true
+	_set_info_panel_text("\n".join(lines))
 
 
 func _on_selection_cleared() -> void:
+	info_panel_resize_version += 1
 	info_panel.visible = false
 	info_label.text = ""
+	info_label.custom_minimum_size = Vector2.ZERO
 	info_label.size = Vector2.ZERO
+	info_panel.custom_minimum_size = Vector2.ZERO
 	info_panel.size = Vector2.ZERO
 
 
@@ -163,6 +164,29 @@ func _configure_info_panel() -> void:
 	info_label.add_theme_constant_override("line_spacing", info_panel_line_spacing)
 
 
+func _set_info_panel_text(text: String) -> void:
+	info_panel_resize_version += 1
+	var current_resize_version: int = info_panel_resize_version
+	info_label.text = text
+	info_label.custom_minimum_size = Vector2.ZERO
+	info_label.size = Vector2.ZERO
+	info_panel.custom_minimum_size = Vector2.ZERO
+	info_panel.size = Vector2.ZERO
+	info_panel.position = info_panel_position
+	info_panel.visible = true
+	_resize_info_panel_to_content()
+	_resize_info_panel_deferred(current_resize_version)
+
+
+func _resize_info_panel_deferred(resize_version: int) -> void:
+	await get_tree().process_frame
+	if resize_version != info_panel_resize_version:
+		return
+	if not info_panel.visible:
+		return
+	_resize_info_panel_to_content()
+
+
 func _resize_info_panel_to_content() -> void:
 	var font: Font = info_label.get_theme_font("font")
 	var font_size: int = info_label.get_theme_font_size("font_size")
@@ -173,15 +197,15 @@ func _resize_info_panel_to_content() -> void:
 		var line_size: Vector2 = font.get_string_size(text_line, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
 		text_width = max(text_width, line_size.x)
 
-	var line_height: float = font.get_height(font_size) + float(info_panel_line_spacing)
+	var line_height: float = font.get_height(font_size) + float(info_panel_line_spacing) + 4.0
 	var text_height: float = float(text_lines.size()) * line_height
 	var target_width: float = max(info_panel_min_width, text_width + info_panel_padding * 2.0)
-	var target_height: float = max(info_panel_min_height, text_height + info_panel_padding * 2.0)
+	var target_height: float = text_height + info_panel_padding * 2.0
 	var target_size: Vector2 = Vector2(target_width, target_height)
 	var label_size: Vector2 = Vector2(text_width, text_height)
 
 	info_panel.position = info_panel_position
-	info_panel.custom_minimum_size = Vector2.ZERO
+	info_panel.custom_minimum_size = target_size
 	info_panel.size = target_size
 	info_label.custom_minimum_size = label_size
 	info_label.size = label_size
