@@ -4,6 +4,7 @@ extends Node3D
 @onready var build_mode_label: Label = $CanvasLayer/BuildModeLabel
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
 @onready var stone_label: Label = $CanvasLayer/StoneLabel
+@onready var food_label: Label = $CanvasLayer/FoodLabel
 @onready var population_label: Label = $CanvasLayer/PopulationLabel
 @onready var unemployed_label: Label = $CanvasLayer/UnemployedLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
@@ -14,6 +15,7 @@ extends Node3D
 @onready var lumberjack_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/LumberjackButton
 @onready var house_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/HouseButton
 @onready var stone_mine_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/StoneMineButton
+@onready var berry_gatherer_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/BerryGathererButton
 
 var message_version: int = 0
 var selected_building_name: String = "-"
@@ -22,6 +24,7 @@ var current_housing_capacity: int = 0
 var building_workplaces: Dictionary = {
 	"Holzfällerhütte": 1,
 	"Steinmine": 1,
+	"Beerensammler": 1,
 }
 var info_panel_resize_version: int = 0
 var info_panel_position: Vector2 = Vector2(16.0, 452.0)
@@ -38,6 +41,7 @@ func _ready() -> void:
 	hex_grid.selected_building_changed.connect(_on_selected_building_changed)
 	hex_grid.wood_changed.connect(_on_wood_changed)
 	hex_grid.stone_changed.connect(_on_stone_changed)
+	hex_grid.food_changed.connect(_on_food_changed)
 	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.population_changed.connect(_on_population_changed)
 	hex_grid.work_changed.connect(_on_work_changed)
@@ -45,12 +49,14 @@ func _ready() -> void:
 	lumberjack_button.pressed.connect(_on_lumberjack_button_pressed)
 	house_button.pressed.connect(_on_house_button_pressed)
 	stone_mine_button.pressed.connect(_on_stone_mine_button_pressed)
+	berry_gatherer_button.pressed.connect(_on_berry_gatherer_button_pressed)
 	current_population = hex_grid.population
 	current_housing_capacity = hex_grid.housing_capacity
 	_on_build_mode_changed(false)
 	_on_selected_building_changed("-")
 	_on_wood_changed(hex_grid.wood)
 	_on_stone_changed(hex_grid.stone)
+	_on_food_changed(hex_grid.food)
 	_update_population_housing_label()
 	_on_work_changed(
 		hex_grid.unemployed_count,
@@ -73,6 +79,7 @@ func _on_hex_selected(
 	own_forest: bool,
 	adjacent_forests: int,
 	wood_production: int,
+	food_production: int,
 	own_stone: bool,
 	adjacent_stones: int,
 	stone_production: int,
@@ -103,6 +110,11 @@ func _on_hex_selected(
 		lines.append("Eigenes Wald-Hex: %s" % own_forest_text)
 		lines.append("Angrenzende Wälder: %d/6" % adjacent_forests)
 		lines.append("Produktion: %d Holz / 5 Sekunden" % wood_production)
+
+	if has_building and building_name == "Beerensammler":
+		var berry_own_forest_text: String = "ja" if own_forest else "nein"
+		lines.append("Eigenes Wald-Hex: %s" % berry_own_forest_text)
+		lines.append("Produktion: %d Nahrung / 5 Sekunden" % food_production)
 
 	if has_building and building_name == "Steinmine":
 		var own_stone_text: String = "ja" if own_stone else "nein"
@@ -219,12 +231,20 @@ func _on_stone_mine_button_pressed() -> void:
 	hex_grid.call("select_building", "stone_mine")
 
 
+func _on_berry_gatherer_button_pressed() -> void:
+	hex_grid.call("select_building", "berry_gatherer")
+
+
 func _on_wood_changed(amount: int) -> void:
 	resource_label.text = "Holz: %d" % amount
 
 
 func _on_stone_changed(amount: int) -> void:
 	stone_label.text = "Stein: %d" % amount
+
+
+func _on_food_changed(amount: int) -> void:
+	food_label.text = "Nahrung: %d" % amount
 
 
 func _on_housing_changed(amount: int) -> void:
