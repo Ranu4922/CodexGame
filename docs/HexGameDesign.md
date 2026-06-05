@@ -152,6 +152,17 @@ Noch nicht final entschieden.
 * Diplomatie
 * Fraktionen
 
+Bedrohungssystem
+
+- Wilde Tiere
+- Monster
+- Banditen
+
+Dörfer und Handelsrouten können angegriffen werden.
+
+Neue und schwache Dörfer benötigen Schutz.
+
+Der Spieler kann Verteidigungen, Wachen und Garnisonen errichten.
 ---
 
 # Ideenparkplatz
