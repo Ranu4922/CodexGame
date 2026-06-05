@@ -22,6 +22,8 @@ signal selected_building_changed(display_name: String)
 signal wood_changed(amount: int)
 signal stone_changed(amount: int)
 signal housing_changed(amount: int)
+signal population_changed(amount: int)
+signal free_housing_changed(amount: int)
 signal message_changed(text: String)
 
 @export var radius: int = 6
@@ -30,6 +32,7 @@ signal message_changed(text: String)
 @export var generation_seed: int = 12345
 @export var starting_wood: int = 20
 @export var starting_stone: int = 0
+@export var starting_population: int = 2
 @export var lumberjack_hut_wood_cost: int = 5
 @export var house_wood_cost: int = 10
 @export var stone_mine_wood_cost: int = 10
@@ -45,6 +48,9 @@ var build_mode: bool = false
 var wood: int = 0
 var stone: int = 0
 var housing_capacity: int = 0
+var population: int = 0
+var free_housing: int = 0
+var residents: Array[Dictionary] = []
 var tiles_by_coords: Dictionary = {}
 var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var stone_mine_tiles: Array[MeshInstance3D] = []
@@ -70,6 +76,8 @@ func _ready() -> void:
 	influence_marker_material = _make_material(Color(0.90, 0.82, 0.20))
 	_generate_grid()
 	_place_starting_village_center()
+	_recalculate_housing_capacity()
+	_initialize_population()
 	_update_village_center_influence()
 	selected_building_changed.emit("-")
 
@@ -314,7 +322,7 @@ func _create_building_definitions() -> Dictionary:
 			"name": "Dorfzentrum",
 			"build_costs": {"wood": 0, "stone": 0},
 			"allowed_tile_types": ["Gras", "Wald", "Stein"],
-			"housing": 0,
+			"housing": 2,
 			"production": 0,
 			"production_resource": "",
 		},
@@ -453,6 +461,7 @@ func _place_starting_village_center() -> void:
 	center_tile.set_meta("building_name", _get_building_display_name("village_center"))
 	center_tile.set_meta("building_type", "village_center")
 	center_tile.set_meta("nearest_village_center_coords", Vector2i(0, 0))
+	center_tile.set_meta("resident_capacity", _get_building_housing("village_center"))
 	village_center_tile = center_tile
 
 
@@ -581,6 +590,42 @@ func _add_wood(amount: int) -> void:
 	message_changed.emit("+%d Holz erhalten." % amount)
 
 
+func _initialize_population() -> void:
+	var initial_population: int = min(starting_population, housing_capacity)
+	_set_population(initial_population)
+
+
+func _set_population(amount: int) -> void:
+	population = min(amount, housing_capacity)
+	_sync_resident_data_to_population()
+	population_changed.emit(population)
+	_update_free_housing()
+
+
+func _sync_resident_data_to_population() -> void:
+	while residents.size() < population:
+		var resident_data: Dictionary = {
+			"id": residents.size() + 1,
+			"job": "",
+		}
+		residents.append(resident_data)
+
+	while residents.size() > population:
+		residents.remove_at(residents.size() - 1)
+
+
+func _clamp_population_to_housing() -> void:
+	if population > housing_capacity:
+		_set_population(housing_capacity)
+
+
+func _update_free_housing() -> void:
+	free_housing = housing_capacity - population
+	if free_housing < 0:
+		free_housing = 0
+	free_housing_changed.emit(free_housing)
+
+
 func _recalculate_housing_capacity() -> void:
 	var total_capacity: int = 0
 
@@ -589,11 +634,13 @@ func _recalculate_housing_capacity() -> void:
 			continue
 
 		var tile: MeshInstance3D = tile_variant as MeshInstance3D
-		if String(tile.get_meta("building_type", "")) == "house":
+		if tile.has_meta("resident_capacity"):
 			total_capacity += int(tile.get_meta("resident_capacity", 0))
 
 	housing_capacity = total_capacity
 	housing_changed.emit(housing_capacity)
+	_clamp_population_to_housing()
+	_update_free_housing()
 
 
 func _run_production_cycle() -> void:
