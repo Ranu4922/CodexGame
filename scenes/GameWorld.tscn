@@ -125,12 +125,9 @@ text = "Steinmine"
 visible = false
 offset_left = 16.0
 offset_top = 452.0
-offset_right = 360.0
-offset_bottom = 652.0
+offset_right = 316.0
+offset_bottom = 532.0
 
 [node name="InfoLabel" type="Label" parent="CanvasLayer/InfoPanel"]
-offset_left = 7.0
-offset_top = 7.0
-offset_right = 327.0
-offset_bottom = 183.0
+layout_mode = 2
 text = ""
