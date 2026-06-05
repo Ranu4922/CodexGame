@@ -7,6 +7,8 @@ extends Node3D
 @onready var housing_label: Label = $CanvasLayer/HousingLabel
 @onready var population_label: Label = $CanvasLayer/PopulationLabel
 @onready var free_housing_label: Label = $CanvasLayer/FreeHousingLabel
+@onready var workplace_label: Label = $CanvasLayer/WorkplaceLabel
+@onready var free_workplace_label: Label = $CanvasLayer/FreeWorkplaceLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
@@ -18,6 +20,9 @@ extends Node3D
 
 var message_version: int = 0
 var selected_building_name: String = "-"
+var workplace_count: int = 0
+var assigned_workplace_count: int = 0
+var free_workplace_count: int = 0
 
 
 func _ready() -> void:
@@ -41,7 +46,12 @@ func _ready() -> void:
 	_on_housing_changed(hex_grid.housing_capacity)
 	_on_population_changed(hex_grid.population)
 	_on_free_housing_changed(hex_grid.free_housing)
+	_update_workplace_labels()
 	_on_selection_cleared()
+
+
+func _process(_delta: float) -> void:
+	_update_workplace_labels()
 
 
 func _on_hex_selected(
@@ -73,6 +83,10 @@ func _on_hex_selected(
 		"Im Siedlungsgebiet: %s" % settlement_text,
 		"Entfernung zum Dorfzentrum: %d" % village_center_distance,
 	])
+
+	if has_building:
+		var building_workplaces: int = _get_workplaces_for_building_name(building_name)
+		lines.append("Arbeitsplätze: %d" % building_workplaces)
 
 	if has_building and building_name == "Holzfällerhütte":
 		var own_forest_text: String = "ja" if own_forest else "nein"
@@ -148,6 +162,44 @@ func _on_population_changed(amount: int) -> void:
 
 func _on_free_housing_changed(amount: int) -> void:
 	free_housing_label.text = "Freier Wohnraum: %d" % amount
+
+
+func _update_workplace_labels() -> void:
+	workplace_count = _calculate_workplace_count()
+	free_workplace_count = workplace_count - assigned_workplace_count
+	if free_workplace_count < 0:
+		free_workplace_count = 0
+
+	workplace_label.text = "Arbeitsplätze: %d" % workplace_count
+	free_workplace_label.text = "Freie Arbeitsplätze: %d" % free_workplace_count
+
+
+func _calculate_workplace_count() -> int:
+	var total_workplaces: int = 0
+	var tile_nodes: Array[Node] = hex_grid.get_children()
+
+	for tile_node in tile_nodes:
+		if tile_node is MeshInstance3D and tile_node.has_meta("building_type"):
+			var building_type: String = String(tile_node.get_meta("building_type"))
+			total_workplaces += _get_workplaces_for_building_type(building_type)
+
+	return total_workplaces
+
+
+func _get_workplaces_for_building_type(building_type: String) -> int:
+	if building_type == "lumberjack_hut":
+		return 1
+	if building_type == "stone_mine":
+		return 1
+	return 0
+
+
+func _get_workplaces_for_building_name(building_name: String) -> int:
+	if building_name == "Holzfällerhütte":
+		return 1
+	if building_name == "Steinmine":
+		return 1
+	return 0
 
 
 func _on_message_changed(text: String) -> void:
