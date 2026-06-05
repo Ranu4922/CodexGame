@@ -153,6 +153,45 @@ Unzufriedene Bewohner können die Siedlung verlassen.
 
 ---
 
+## Ressourcengebäude
+
+Ressourcengebäude nutzen passende Ressourcen-Hexfelder in ihrem Arbeitsradius.
+
+Beispiele:
+
+* Holzfällerhütte → Wald-Hexe
+* Mine → Stein- oder Erz-Hexe
+* Jagdhütte → Wildnis-Hexe
+
+### Automatische Zuweisung
+
+Beim Bau eines Ressourcengebäudes werden geeignete Ressourcen-Hexfelder im Arbeitsradius automatisch zugewiesen.
+
+Das Gebäude wählt standardmäßig die besten verfügbaren Felder.
+
+### Reservierung
+
+Ein Ressourcen-Hexfeld kann immer nur einem Ressourcengebäude gleichzeitig zugewiesen sein.
+
+Dadurch kann dieselbe Ressource nicht mehrfach von verschiedenen Gebäuden genutzt werden.
+
+### Manuelle Optimierung
+
+Der Spieler kann die automatisch gewählten Ressourcen-Hexfelder später manuell anpassen.
+
+Dadurch können Produktionsketten optimiert werden, ohne dass Mikromanagement erforderlich wird.
+
+### Ziel
+
+Das System soll:
+
+* einfach zu verstehen sein
+* Mikromanagement vermeiden
+* strategische Entscheidungen ermöglichen
+* unbegrenzte Produktionsskalierung verhindern
+
+---
+
 ## Gebäude
 
 ### Holzfällerhütte
