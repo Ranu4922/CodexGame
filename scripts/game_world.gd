@@ -76,6 +76,7 @@ func _on_hex_selected(
 	has_building: bool,
 	building_name: String,
 	assigned_workers: int,
+	assigned_job: String,
 	own_forest: bool,
 	adjacent_forests: int,
 	wood_production: int,
@@ -103,24 +104,25 @@ func _on_hex_selected(
 	if has_building:
 		var building_workplace_count: int = _get_workplaces_for_building_name(building_name)
 		lines.append("Arbeitsplätze: %d" % building_workplace_count)
-		lines.append("Zugewiesene Arbeiter: %d" % assigned_workers)
+		if _is_production_building(building_name):
+			var workplace_status: String = "belegt" if assigned_workers > 0 else "unbesetzt"
+			lines.append("Arbeitsplatz: %s" % workplace_status)
+			lines.append("Zugewiesener Job: %s" % assigned_job)
+			lines.append(_get_production_text(building_name, wood_production, stone_production, food_production))
 
 	if has_building and building_name == "Holzfällerhütte":
 		var own_forest_text: String = "ja" if own_forest else "nein"
 		lines.append("Eigenes Wald-Hex: %s" % own_forest_text)
 		lines.append("Angrenzende Wälder: %d/6" % adjacent_forests)
-		lines.append("Produktion: %d Holz / 5 Sekunden" % wood_production)
 
 	if has_building and building_name == "Beerensammler":
 		var berry_own_forest_text: String = "ja" if own_forest else "nein"
 		lines.append("Eigenes Wald-Hex: %s" % berry_own_forest_text)
-		lines.append("Produktion: %d Nahrung / 5 Sekunden" % food_production)
 
 	if has_building and building_name == "Steinmine":
 		var own_stone_text: String = "ja" if own_stone else "nein"
 		lines.append("Eigenes Stein-Hex: %s" % own_stone_text)
 		lines.append("Angrenzende Steine: %d/6" % adjacent_stones)
-		lines.append("Produktion: %d Stein / 5 Sekunden" % stone_production)
 
 	_set_info_panel_text("\n".join(lines))
 
@@ -269,6 +271,20 @@ func _get_workplaces_for_building_name(building_name: String) -> int:
 	if not building_workplaces.has(building_name):
 		return 0
 	return int(building_workplaces[building_name])
+
+
+func _is_production_building(building_name: String) -> bool:
+	return building_name == "Holzfällerhütte" or building_name == "Steinmine" or building_name == "Beerensammler"
+
+
+func _get_production_text(building_name: String, wood_production: int, stone_production: int, food_production: int) -> String:
+	if building_name == "Holzfällerhütte":
+		return "Produktion: %d Holz / 5 Sekunden" % wood_production
+	if building_name == "Steinmine":
+		return "Produktion: %d Stein / 5 Sekunden" % stone_production
+	if building_name == "Beerensammler":
+		return "Produktion: %d Nahrung / 5 Sekunden" % food_production
+	return "Produktion: 0 / 5 Sekunden"
 
 
 func _on_message_changed(text: String) -> void:
