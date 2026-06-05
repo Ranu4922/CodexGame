@@ -52,11 +52,13 @@ var production_timer: float = 0.0
 var village_center_tile: MeshInstance3D
 var show_influence_area: bool = false
 var selected_building_type: String = ""
+var building_definitions: Dictionary = {}
 
 
 func _ready() -> void:
 	wood = starting_wood
 	stone = starting_stone
+	building_definitions = _create_building_definitions()
 	tile_materials = {
 		"Gras": _make_material(Color(0.22, 0.55, 0.32)),
 		"Wald": _make_material(Color(0.08, 0.32, 0.16)),
@@ -299,55 +301,133 @@ func clear_selected_building() -> void:
 
 
 func _get_building_display_name(building_type: String) -> String:
-	if building_type == "lumberjack_hut":
-		return "Holzfällerhütte"
-	if building_type == "house":
-		return "Wohnhaus"
-	if building_type == "stone_mine":
-		return "Steinmine"
-	return "-"
+	if not building_definitions.has(building_type):
+		return "-"
+
+	var definition: Dictionary = building_definitions[building_type] as Dictionary
+	return String(definition["name"])
+
+
+func _create_building_definitions() -> Dictionary:
+	return {
+		"village_center": {
+			"name": "Dorfzentrum",
+			"build_costs": {"wood": 0, "stone": 0},
+			"allowed_tile_types": ["Gras", "Wald", "Stein"],
+			"housing": 0,
+			"production": 0,
+			"production_resource": "",
+		},
+		"house": {
+			"name": "Wohnhaus",
+			"build_costs": {"wood": house_wood_cost, "stone": 0},
+			"allowed_tile_types": ["Gras", "Wald", "Stein"],
+			"housing": 2,
+			"production": 0,
+			"production_resource": "",
+		},
+		"lumberjack_hut": {
+			"name": "Holzfällerhütte",
+			"build_costs": {"wood": lumberjack_hut_wood_cost, "stone": 0},
+			"allowed_tile_types": ["Wald"],
+			"housing": 0,
+			"production": 1,
+			"production_resource": "Holz",
+		},
+		"stone_mine": {
+			"name": "Steinmine",
+			"build_costs": {"wood": stone_mine_wood_cost, "stone": 0},
+			"allowed_tile_types": ["Stein"],
+			"housing": 0,
+			"production": 1,
+			"production_resource": "Stein",
+		},
+	}
+
+
+func _get_building_definition(building_type: String) -> Dictionary:
+	if not building_definitions.has(building_type):
+		return {}
+	return building_definitions[building_type] as Dictionary
+
+
+func _get_building_wood_cost(building_type: String) -> int:
+	var definition: Dictionary = _get_building_definition(building_type)
+	if definition.is_empty():
+		return 0
+
+	var build_costs: Dictionary = definition["build_costs"] as Dictionary
+	if not build_costs.has("wood"):
+		return 0
+	return int(build_costs["wood"])
+
+
+func _get_building_housing(building_type: String) -> int:
+	var definition: Dictionary = _get_building_definition(building_type)
+	if definition.is_empty():
+		return 0
+	return int(definition["housing"])
+
+
+func _get_building_production(building_type: String) -> int:
+	var definition: Dictionary = _get_building_definition(building_type)
+	if definition.is_empty():
+		return 0
+	return int(definition["production"])
+
+
+func _is_tile_type_allowed_for_building(tile: MeshInstance3D, building_type: String) -> bool:
+	var definition: Dictionary = _get_building_definition(building_type)
+	if definition.is_empty():
+		return false
+
+	var allowed_tile_types: Array = definition["allowed_tile_types"] as Array
+	var tile_type: String = String(tile.get_meta("tile_type"))
+	return allowed_tile_types.has(tile_type)
 
 
 func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
-	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
-	if not own_forest:
+	if not _is_tile_type_allowed_for_building(tile, "lumberjack_hut"):
 		message_changed.emit("Benötigt Wald")
 		return
 
-	if wood < lumberjack_hut_wood_cost:
-		message_changed.emit("Nicht genug Holz. Holzfällerhütte kostet %d Holz." % lumberjack_hut_wood_cost)
+	var wood_cost: int = _get_building_wood_cost("lumberjack_hut")
+	if wood < wood_cost:
+		message_changed.emit("Nicht genug Holz. Holzfällerhütte kostet %d Holz." % wood_cost)
 		return
 
-	wood -= lumberjack_hut_wood_cost
+	wood -= wood_cost
 	wood_changed.emit(wood)
 	_place_lumberjack_hut(tile)
-	message_changed.emit("Holzfällerhütte gebaut: -%d Holz." % lumberjack_hut_wood_cost)
+	message_changed.emit("Holzfällerhütte gebaut: -%d Holz." % wood_cost)
 
 
 func _try_place_house(tile: MeshInstance3D) -> void:
-	if wood < house_wood_cost:
-		message_changed.emit("Nicht genug Holz. Wohnhaus kostet %d Holz." % house_wood_cost)
+	var wood_cost: int = _get_building_wood_cost("house")
+	if wood < wood_cost:
+		message_changed.emit("Nicht genug Holz. Wohnhaus kostet %d Holz." % wood_cost)
 		return
 
-	wood -= house_wood_cost
+	wood -= wood_cost
 	wood_changed.emit(wood)
 	_place_house(tile)
-	message_changed.emit("Wohnhaus gebaut: -%d Holz." % house_wood_cost)
+	message_changed.emit("Wohnhaus gebaut: -%d Holz." % wood_cost)
 
 
 func _try_place_stone_mine(tile: MeshInstance3D) -> void:
-	if String(tile.get_meta("tile_type")) != "Stein":
+	if not _is_tile_type_allowed_for_building(tile, "stone_mine"):
 		message_changed.emit("Steinmine kann nur auf einem Stein-Hex gebaut werden.")
 		return
 
-	if wood < stone_mine_wood_cost:
-		message_changed.emit("Nicht genug Holz. Steinmine kostet %d Holz." % stone_mine_wood_cost)
+	var wood_cost: int = _get_building_wood_cost("stone_mine")
+	if wood < wood_cost:
+		message_changed.emit("Nicht genug Holz. Steinmine kostet %d Holz." % wood_cost)
 		return
 
-	wood -= stone_mine_wood_cost
+	wood -= wood_cost
 	wood_changed.emit(wood)
 	_place_stone_mine(tile)
-	message_changed.emit("Steinmine gebaut: -%d Holz." % stone_mine_wood_cost)
+	message_changed.emit("Steinmine gebaut: -%d Holz." % wood_cost)
 
 
 func _place_starting_village_center() -> void:
@@ -370,7 +450,7 @@ func _place_starting_village_center() -> void:
 
 	center_tile.add_child(marker)
 	center_tile.set_meta("has_building", true)
-	center_tile.set_meta("building_name", "Dorfzentrum")
+	center_tile.set_meta("building_name", _get_building_display_name("village_center"))
 	center_tile.set_meta("building_type", "village_center")
 	center_tile.set_meta("nearest_village_center_coords", Vector2i(0, 0))
 	village_center_tile = center_tile
@@ -436,10 +516,10 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	tile.add_child(marker)
 	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
 	var adjacent_forests: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Wald")
-	var production: int = 1
+	var production: int = _get_building_production("lumberjack_hut")
 
 	tile.set_meta("has_building", true)
-	tile.set_meta("building_name", "Holzfällerhütte")
+	tile.set_meta("building_name", _get_building_display_name("lumberjack_hut"))
 	tile.set_meta("building_type", "lumberjack_hut")
 	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
 	tile.set_meta("own_forest", own_forest)
@@ -461,10 +541,10 @@ func _place_house(tile: MeshInstance3D) -> void:
 
 	tile.add_child(marker)
 	tile.set_meta("has_building", true)
-	tile.set_meta("building_name", "Wohnhaus")
+	tile.set_meta("building_name", _get_building_display_name("house"))
 	tile.set_meta("building_type", "house")
 	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
-	tile.set_meta("resident_capacity", 2)
+	tile.set_meta("resident_capacity", _get_building_housing("house"))
 	tile.set_meta("current_residents", 0)
 	_recalculate_housing_capacity()
 
@@ -483,10 +563,10 @@ func _place_stone_mine(tile: MeshInstance3D) -> void:
 	tile.add_child(marker)
 	var own_stone: bool = tile.get_meta("tile_type") == "Stein"
 	var adjacent_stones: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Stein")
-	var production: int = 1
+	var production: int = _get_building_production("stone_mine")
 
 	tile.set_meta("has_building", true)
-	tile.set_meta("building_name", "Steinmine")
+	tile.set_meta("building_name", _get_building_display_name("stone_mine"))
 	tile.set_meta("building_type", "stone_mine")
 	tile.set_meta("nearest_village_center_coords", _get_nearest_village_center_coords())
 	tile.set_meta("own_stone", own_stone)
