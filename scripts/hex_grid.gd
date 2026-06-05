@@ -285,9 +285,8 @@ func _try_place_selected_building(tile: MeshInstance3D) -> void:
 
 func _try_place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	var own_forest: bool = tile.get_meta("tile_type") == "Wald"
-	var adjacent_forests: int = _count_adjacent_tiles_of_type(int(tile.get_meta("q")), int(tile.get_meta("r")), "Wald")
-	if not own_forest and adjacent_forests <= 0:
-		message_changed.emit("Holzfällerhütte benötigt mindestens 1 Wald-Hex in Reichweite.")
+	if not own_forest:
+		message_changed.emit("Benötigt Wald")
 		return
 
 	if wood < lumberjack_hut_wood_cost:
