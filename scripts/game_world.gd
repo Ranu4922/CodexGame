@@ -5,12 +5,17 @@ extends Node3D
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
 @onready var stone_label: Label = $CanvasLayer/StoneLabel
 @onready var housing_label: Label = $CanvasLayer/HousingLabel
+@onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
 @onready var info_label: Label = $CanvasLayer/InfoPanel/InfoLabel
+@onready var build_menu: PanelContainer = $CanvasLayer/BuildMenu
+@onready var lumberjack_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/LumberjackButton
+@onready var house_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/HouseButton
+@onready var stone_mine_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/StoneMineButton
 
 var message_version: int = 0
-var selected_building_name: String = "Holzfällerhütte"
+var selected_building_name: String = "-"
 
 
 func _ready() -> void:
@@ -22,7 +27,11 @@ func _ready() -> void:
 	hex_grid.stone_changed.connect(_on_stone_changed)
 	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
+	lumberjack_button.pressed.connect(_on_lumberjack_button_pressed)
+	house_button.pressed.connect(_on_house_button_pressed)
+	stone_mine_button.pressed.connect(_on_stone_mine_button_pressed)
 	_on_build_mode_changed(false)
+	_on_selected_building_changed("-")
 	_on_wood_changed(hex_grid.wood)
 	_on_stone_changed(hex_grid.stone)
 	_on_housing_changed(hex_grid.housing_capacity)
@@ -82,6 +91,7 @@ func _on_selection_cleared() -> void:
 
 func _on_build_mode_changed(enabled: bool) -> void:
 	_update_build_mode_label(enabled)
+	build_menu.visible = enabled
 	build_mode_label.add_theme_color_override(
 		"font_color",
 		Color(0.20, 0.85, 0.25) if enabled else Color(0.95, 0.20, 0.18)
@@ -90,14 +100,27 @@ func _on_build_mode_changed(enabled: bool) -> void:
 
 func _on_selected_building_changed(display_name: String) -> void:
 	selected_building_name = display_name
+	selected_building_label.text = "Ausgewähltes Gebäude: %s" % selected_building_name
 	_update_build_mode_label(hex_grid.build_mode)
 
 
 func _update_build_mode_label(enabled: bool) -> void:
 	if enabled:
-		build_mode_label.text = "Baumodus: AN (%s)" % selected_building_name
+		build_mode_label.text = "Baumodus: AN"
 	else:
 		build_mode_label.text = "Baumodus: AUS"
+
+
+func _on_lumberjack_button_pressed() -> void:
+	hex_grid.call("select_building", "lumberjack_hut")
+
+
+func _on_house_button_pressed() -> void:
+	hex_grid.call("select_building", "house")
+
+
+func _on_stone_mine_button_pressed() -> void:
+	hex_grid.call("select_building", "stone_mine")
 
 
 func _on_wood_changed(amount: int) -> void:
