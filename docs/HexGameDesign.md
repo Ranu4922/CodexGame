@@ -1,12 +1,69 @@
 # Hex Game Design Document
 
-Version 0.1
+Version 3.0
 
 ## Vision
 
 Hex Game ist ein 2.5D-Survival-Aufbauspiel in einer mittelalterlich-fantastischen Welt.
 
 Der Spieler beginnt mit wenigen Ressourcen und entwickelt eine kleine Siedlung zu einer lebendigen Stadt. Dabei verbindet das Spiel Survival, Aufbau, Wirtschaft, Erkundung und Bevölkerungsmanagement.
+
+---
+
+## Hintergrundgeschichte
+
+### Der Fall
+
+Vor vielen Jahrzehnten ereignete sich eine Katastrophe, die heute nur noch als "Der Fall" bekannt ist.
+
+Niemand weiß mehr genau, was geschah.
+
+Die großen Reiche brachen zusammen, Städte wurden zerstört und die Handelswege verschwanden. Viele Menschen starben, andere flohen in alle Richtungen.
+
+Gleichzeitig tauchten gefährliche Kreaturen auf und große Teile der Wildnis wurden unbewohnbar.
+
+Die wenigen Überlebenden verloren den Kontakt zueinander und gründeten kleine Lager, Dörfer und Siedlungen.
+
+### Spielstart
+
+Der Spieler führt eine kleine Gruppe von Überlebenden an.
+
+Zu Beginn bestehen diese aus dem Spielercharakter und wenigen Bewohnern.
+
+Mit begrenzten Vorräten sucht die Gruppe nach einem Ort, an dem eine neue Heimat entstehen kann.
+
+Dort beginnt der Aufbau der ersten Siedlung.
+
+### Die Welt
+
+Die Welt ist nicht leer.
+
+Beim Erkunden können gefunden werden:
+
+* Einzelne Überlebende
+* Reisende
+* Kleine Lager
+* Neue Dörfer
+* Verlassene Ruinen
+* Alte Städte
+
+Einige Bewohner können rekrutiert werden, andere werden zu Handelspartnern oder Verbündeten.
+
+### Monster
+
+Seit dem Fall ist die Wildnis gefährlich.
+
+In der Welt existieren verschiedene Monster und Kreaturen, die Menschen, Händler, Außenposten und Siedlungen bedrohen können.
+
+Große Teile der Welt gelten noch immer als ungesichert.
+
+### Langfristiges Ziel
+
+Das Ziel des Spielers ist nicht nur das Überleben.
+
+Aus einer kleinen Gruppe von Überlebenden soll erneut eine blühende Zivilisation entstehen.
+
+Durch Erkundung, Besiedlung, Handel und Verteidigung wird die verlorene Welt Schritt für Schritt zurückerobert.
 
 ---
 
@@ -236,4 +293,13 @@ Intern bleiben alle Lager voneinander getrennt.
 * Keine globale Ressourcenlagerung
 * Handelsrouten und Daueraufträge festgelegt
 * Imperiumsübersicht als Gesamtanzeige geplant
+
+### Version 0.3
+
+* Hintergrundgeschichte "Der Fall" hinzugefügt
+* Spieler startet als Anführer einer Überlebendengruppe
+* Überlebende, Dörfer und Ruinen in der Welt festgelegt
+* Monster als Bedrohung der Wildnis übernommen
+* Langfristiges Ziel: Wiederaufbau der Zivilisation
+
 
