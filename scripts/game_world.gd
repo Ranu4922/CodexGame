@@ -92,6 +92,7 @@ func _on_selection_cleared() -> void:
 func _on_build_mode_changed(enabled: bool) -> void:
 	_update_build_mode_label(enabled)
 	build_menu.visible = enabled
+	selected_building_label.visible = false
 	build_mode_label.add_theme_color_override(
 		"font_color",
 		Color(0.20, 0.85, 0.25) if enabled else Color(0.95, 0.20, 0.18)
@@ -106,7 +107,7 @@ func _on_selected_building_changed(display_name: String) -> void:
 
 func _update_build_mode_label(enabled: bool) -> void:
 	if enabled:
-		build_mode_label.text = "Baumodus: AN"
+		build_mode_label.text = "Baumodus: AN (%s)" % selected_building_name
 	else:
 		build_mode_label.text = "Baumodus: AUS"
 
