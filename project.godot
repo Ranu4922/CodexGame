@@ -13,3 +13,10 @@ config_version=5
 config/name="Hex Survival MVP"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.2")
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/size/mode=0
+window/size/initial_position_type=1
