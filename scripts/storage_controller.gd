@@ -46,6 +46,9 @@ func _process(_delta: float) -> void:
 	_update_settlement_resource_lines()
 	if warehouse_selected and not bool(hex_grid.get("build_mode")):
 		warehouse_selected = false
+	var selected_building_type: String = String(hex_grid.get("selected_building_type"))
+	if warehouse_selected and not selected_building_type.is_empty():
+		warehouse_selected = false
 
 
 func _input(event: InputEvent) -> void:
@@ -197,8 +200,16 @@ func _update_settlement_resource_lines() -> void:
 	if settlement_content_label.text.is_empty():
 		return
 	var lines: PackedStringArray = settlement_content_label.text.split("\n")
+	var in_resource_section: bool = false
 	for line_index in range(lines.size()):
 		var line_text: String = lines[line_index]
+		if line_text == "Ressourcen":
+			in_resource_section = true
+			continue
+		if in_resource_section and line_text.is_empty():
+			break
+		if not in_resource_section:
+			continue
 		if line_text.begins_with("Holz:"):
 			lines[line_index] = "Holz: %d / %d" % [int(hex_grid.get("wood")), wood_capacity]
 		if line_text.begins_with("Stein:"):
