@@ -44,6 +44,7 @@ signal message_changed(text: String)
 @export var stone_mine_wood_cost: int = 10
 @export var berry_gatherer_wood_cost: int = 10
 @export var production_interval: float = 5.0
+@export var food_consumption_interval: float = 30.0
 @export var village_center_influence_radius: int = 3
 
 var selected_tile: MeshInstance3D
@@ -71,6 +72,7 @@ var lumberjack_hut_tiles: Array[MeshInstance3D] = []
 var stone_mine_tiles: Array[MeshInstance3D] = []
 var berry_gatherer_tiles: Array[MeshInstance3D] = []
 var production_timer: float = 0.0
+var food_consumption_timer: float = 0.0
 var village_center_tile: MeshInstance3D
 var show_influence_area: bool = false
 var selected_building_type: String = ""
@@ -100,6 +102,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_food_consumption_timer(delta)
+
 	if lumberjack_hut_tiles.is_empty() and stone_mine_tiles.is_empty() and berry_gatherer_tiles.is_empty():
 		return
 
@@ -107,6 +111,32 @@ func _process(delta: float) -> void:
 	while production_timer >= production_interval:
 		production_timer -= production_interval
 		_run_production_cycle()
+
+
+func _update_food_consumption_timer(delta: float) -> void:
+	if population <= 0:
+		return
+
+	food_consumption_timer += delta
+	while food_consumption_timer >= food_consumption_interval:
+		food_consumption_timer -= food_consumption_interval
+		_run_food_consumption_cycle()
+
+
+func _run_food_consumption_cycle() -> void:
+	var food_needed: int = population
+	if food_needed <= 0:
+		return
+
+	if food >= food_needed:
+		food -= food_needed
+		food_changed.emit(food)
+		message_changed.emit("-%d Nahrung" % food_needed)
+		return
+
+	food = 0
+	food_changed.emit(food)
+	message_changed.emit("Zu wenig Nahrung!")
 
 
 func _generate_grid() -> void:
