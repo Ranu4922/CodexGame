@@ -4,7 +4,7 @@ Version 3.0
 
 ## Vision
 
-Hex Game ist ein 2.5D-Survival-Aufbauspiel in einer mittelalterlich-fantastischen Welt.
+Hex Game ist ein 2.5D/Low-Poly-3D Aufbauspiel mit Erkundungselementen in einer mittelalterlich-fantastischen Welt.
 
 Der Spieler beginnt mit wenigen Ressourcen und entwickelt eine kleine Siedlung zu einer lebendigen Stadt. Dabei verbindet das Spiel Survival, Aufbau, Wirtschaft, Erkundung und Bevölkerungsmanagement.
 
@@ -85,20 +85,116 @@ Nahrungsmangel kann zu Unzufriedenheit, verringerter Produktivität, Abwanderung
 Der Spieler entwickelt sich vom Anführer einer kleinen Gruppe von Überlebenden zum Herrscher eines Netzwerks aus Siedlungen, Handelsrouten und Außenposten.
 
 
-### Die Welt
+## Welt
 
-Die Welt ist nicht leer.
+* Prozedural generierte Welt
+* Hex-Raster als Grundlage
+* Freie Erkundung in alle Richtungen
+* Unterschiedliche Biome
+* Ressourcen abhängig vom Biom
 
-Beim Erkunden können gefunden werden:
+### Hex-Felder
 
-* Einzelne Überlebende
-* Reisende
-* Kleine Lager
-* Neue Dörfer
-* Verlassene Ruinen
-* Alte Städte
+Hex-Felder repräsentieren Gebiete und keine einzelnen Objekte.
 
-Einige Bewohner können rekrutiert werden, andere werden zu Handelspartnern oder Verbündeten.
+Beispiele:
+
+* Waldgebiet
+* Wohngebiet
+* Farmgebiet
+* Erzgebiet
+* Stadtblock
+* Handelsviertel
+
+Ein Hex-Feld kann mehrere Objekte enthalten:
+
+* Häuser
+* Bäume
+* Wege
+* NPCs
+* Monster
+* Dekorationen
+
+Hex-Felder dienen hauptsächlich der Verwaltung, dem Bau und strategischen Entscheidungen.
+
+Der Spieler bewegt sich frei innerhalb der Welt und ist nicht auf die Bewegung von Hex zu Hex beschränkt.
+
+
+## Monsternester
+
+Monster entstehen aus Monsternestern, die in der Welt verteilt sind.
+
+Monsternester stellen eine dauerhafte Bedrohung dar und beeinflussen die Sicherheit der umliegenden Region.
+
+### Bedrohungsgebiet
+
+Jedes Nest besitzt ein Einflussgebiet.
+
+Siedlungen, Außenposten, Straßen und Handelsrouten innerhalb dieses Gebietes können häufiger von Monstern angegriffen werden.
+
+Je näher eine Siedlung an einem aktiven Nest liegt, desto höher ist das Risiko von Angriffen.
+
+Dadurch entsteht ein strategischer Konflikt zwischen:
+
+* sicheren Standorten
+* ressourcenreichen Standorten
+
+### Nest-Stufen
+
+Monsternester besitzen unterschiedliche Entwicklungsstufen.
+
+#### Stufe 1 – Versteck
+
+* Kleine Monstergruppen
+* Geringes Einflussgebiet
+* Frühes Spiel
+
+#### Stufe 2 – Lager
+
+* Größere Monstergruppen
+* Angriffe auf Händler und Außenposten möglich
+
+#### Stufe 3 – Brutstätte
+
+* Regelmäßige Angriffe auf Siedlungen
+* Großes Einflussgebiet
+
+#### Stufe 4 – Festung
+
+* Sehr starke Monstergruppen
+* Monsterpatrouillen möglich
+
+#### Stufe 5 – Ursprungsnest
+
+* Endgame-Bedrohung
+* Erzeugt besonders starke Monsterwellen
+* Stellt eine regionale Großgefahr dar
+
+### Entwicklung
+
+Monsternester entwickeln sich mit der Zeit weiter.
+
+Werden sie ignoriert, können sie aufsteigen und gefährlicher werden.
+
+Frühzeitiges Eingreifen kann spätere Probleme verhindern.
+
+### Regionale Unterschiede
+
+Nicht alle Regionen besitzen gleich starke Nester.
+
+Gefährliche Gebiete können bereits zu Spielbeginn starke Nester enthalten.
+
+Dadurch entstehen natürliche Hochrisikogebiete, die oft wertvolle Ressourcen enthalten.
+
+### Monsterwellen
+
+Die allgemeine Monsteraktivität der Welt wird teilweise durch aktive Monsternester beeinflusst.
+
+Je mehr starke Nester existieren, desto größer ist die Wahrscheinlichkeit für starke Monsterwellen und koordinierte Angriffe.
+
+Das Zerstören von Nestern erhöht langfristig die Sicherheit der Welt.
+
+
 
 ### Monster
 
@@ -405,5 +501,16 @@ Intern bleiben alle Lager voneinander getrennt.
 * Überlebende, Dörfer und Ruinen in der Welt festgelegt
 * Monster als Bedrohung der Wildnis übernommen
 * Langfristiges Ziel: Wiederaufbau der Zivilisation
+
+### Version 0.5
+
+* Monsternester eingeführt
+* Bedrohungsgebiete für Nester festgelegt
+* 5 Nest-Stufen definiert
+* Nester entwickeln sich mit der Zeit weiter
+* Regionale Unterschiede bei Nest-Stärken eingeführt
+* Monsternester beeinflussen Monsterwellen
+* Expansion in gefährliche Regionen als Risiko-/Belohnungssystem festgelegt
+
 
 
