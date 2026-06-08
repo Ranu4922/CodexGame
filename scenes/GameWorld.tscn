@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://d2mvphexworld"]
+[gd_scene load_steps=7 format=3 uid="uid://d2mvphexworld"]
 
 [ext_resource type="Script" path="res://scripts/game_world.gd" id="1_world_script"]
 [ext_resource type="Script" path="res://scripts/hex_grid.gd" id="2_hex_grid_script"]
 [ext_resource type="Script" path="res://scripts/camera_controller.gd" id="3_camera_script"]
 [ext_resource type="Script" path="res://scripts/population_growth.gd" id="4_population_growth_script"]
 [ext_resource type="Script" path="res://scripts/settlement_growth_info.gd" id="5_growth_info_script"]
+[ext_resource type="Script" path="res://scripts/storage_controller.gd" id="6_storage_controller_script"]
 
 [node name="GameWorld" type="Node3D"]
 script = ExtResource("1_world_script")
@@ -14,6 +15,9 @@ script = ExtResource("2_hex_grid_script")
 
 [node name="PopulationGrowth" type="Node" parent="."]
 script = ExtResource("4_population_growth_script")
+
+[node name="StorageController" type="Node" parent="."]
+script = ExtResource("6_storage_controller_script")
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3_camera_script")
@@ -35,21 +39,21 @@ offset_left = 16.0
 offset_top = 16.0
 offset_right = 440.0
 offset_bottom = 48.0
-text = "Holz: 20"
+text = "Holz: 20 / 50"
 
 [node name="StoneLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 44.0
 offset_right = 440.0
 offset_bottom = 76.0
-text = "Stein: 0"
+text = "Stein: 0 / 50"
 
 [node name="FoodLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 72.0
 offset_right = 440.0
 offset_bottom = 104.0
-text = "Nahrung: 0"
+text = "Nahrung: 0 / 50"
 
 [node name="PopulationLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
@@ -92,13 +96,13 @@ visible = false
 offset_left = 16.0
 offset_top = 246.0
 offset_right = 240.0
-offset_bottom = 414.0
+offset_bottom = 452.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/BuildMenu"]
 offset_left = 7.0
 offset_top = 7.0
 offset_right = 217.0
-offset_bottom = 161.0
+offset_bottom = 199.0
 
 [node name="LumberjackButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
@@ -115,6 +119,10 @@ text = "Steinmine"
 [node name="BerryGathererButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
 text = "Beerensammler"
+
+[node name="WarehouseButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
+layout_mode = 2
+text = "Lagerhaus"
 
 [node name="SettlementWindow" type="PanelContainer" parent="CanvasLayer"]
 visible = false
