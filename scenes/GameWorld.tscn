@@ -1,14 +1,18 @@
-[gd_scene load_steps=4 format=3 uid="uid://d2mvphexworld"]
+[gd_scene load_steps=5 format=3 uid="uid://d2mvphexworld"]
 
 [ext_resource type="Script" path="res://scripts/game_world.gd" id="1_world_script"]
 [ext_resource type="Script" path="res://scripts/hex_grid.gd" id="2_hex_grid_script"]
 [ext_resource type="Script" path="res://scripts/camera_controller.gd" id="3_camera_script"]
+[ext_resource type="Script" path="res://scripts/population_growth.gd" id="4_population_growth_script"]
 
 [node name="GameWorld" type="Node3D"]
 script = ExtResource("1_world_script")
 
 [node name="HexGrid" type="Node3D" parent="."]
 script = ExtResource("2_hex_grid_script")
+
+[node name="PopulationGrowth" type="Node" parent="."]
+script = ExtResource("4_population_growth_script")
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3_camera_script")
