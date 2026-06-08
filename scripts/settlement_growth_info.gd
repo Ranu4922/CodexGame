@@ -1,14 +1,32 @@
 extends Label
 
-@onready var game_world: Node = get_tree().current_scene
-@onready var hex_grid: Node = game_world.get_node("HexGrid")
-@onready var population_growth: Node = game_world.get_node("PopulationGrowth")
+var game_world: Node
+var hex_grid: Node
+var population_growth: Node
+
+
+func _ready() -> void:
+	game_world = _find_game_world()
+	if game_world == null:
+		return
+	hex_grid = game_world.get_node_or_null("HexGrid")
+	population_growth = game_world.get_node_or_null("PopulationGrowth")
+	_update_growth_info()
 
 
 func _process(_delta: float) -> void:
 	if hex_grid == null or population_growth == null:
 		return
 	_update_growth_info()
+
+
+func _find_game_world() -> Node:
+	var current_node: Node = self
+	while current_node != null:
+		if current_node.name == "GameWorld":
+			return current_node
+		current_node = current_node.get_parent()
+	return null
 
 
 func _update_growth_info() -> void:
