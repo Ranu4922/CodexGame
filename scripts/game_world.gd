@@ -9,6 +9,9 @@ extends Node3D
 @onready var unemployed_label: Label = $CanvasLayer/UnemployedLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
+@onready var settlement_window: PanelContainer = $CanvasLayer/SettlementWindow
+@onready var settlement_title_label: Label = $CanvasLayer/SettlementWindow/VBoxContainer/TitleLabel
+@onready var settlement_content_label: Label = $CanvasLayer/SettlementWindow/VBoxContainer/ContentLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
 @onready var info_label: Label = $CanvasLayer/InfoPanel/InfoLabel
 @onready var build_menu: PanelContainer = $CanvasLayer/BuildMenu
@@ -19,8 +22,20 @@ extends Node3D
 
 var message_version: int = 0
 var selected_building_name: String = "-"
+var settlement_name: String = "Dorfzentrum"
+var current_wood: int = 0
+var current_stone: int = 0
+var current_food: int = 0
 var current_population: int = 0
 var current_housing_capacity: int = 0
+var current_free_housing: int = 0
+var current_unemployed: int = 0
+var current_lumberjacks: int = 0
+var current_miners: int = 0
+var current_gatherers: int = 0
+var current_workplaces: int = 0
+var current_assigned_workplaces: int = 0
+var current_free_workplaces: int = 0
 var building_workplaces: Dictionary = {
 	"Holzfällerhütte": 1,
 	"Steinmine": 1,
@@ -44,6 +59,7 @@ func _ready() -> void:
 	hex_grid.food_changed.connect(_on_food_changed)
 	hex_grid.housing_changed.connect(_on_housing_changed)
 	hex_grid.population_changed.connect(_on_population_changed)
+	hex_grid.free_housing_changed.connect(_on_free_housing_changed)
 	hex_grid.work_changed.connect(_on_work_changed)
 	hex_grid.message_changed.connect(_on_message_changed)
 	lumberjack_button.pressed.connect(_on_lumberjack_button_pressed)
@@ -52,6 +68,8 @@ func _ready() -> void:
 	berry_gatherer_button.pressed.connect(_on_berry_gatherer_button_pressed)
 	current_population = hex_grid.population
 	current_housing_capacity = hex_grid.housing_capacity
+	current_free_housing = hex_grid.free_housing
+	settlement_window.visible = false
 	_on_build_mode_changed(false)
 	_on_selected_building_changed("-")
 	_on_wood_changed(hex_grid.wood)
@@ -66,6 +84,22 @@ func _ready() -> void:
 		hex_grid.free_workplace_count
 	)
 	_on_selection_cleared()
+	_update_settlement_window()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if not key_event.pressed or key_event.echo:
+			return
+		if key_event.keycode == KEY_I:
+			settlement_window.visible = not settlement_window.visible
+			if settlement_window.visible:
+				_update_settlement_window()
+			get_viewport().set_input_as_handled()
+		if key_event.keycode == KEY_ESCAPE and settlement_window.visible:
+			settlement_window.visible = false
+			get_viewport().set_input_as_handled()
 
 
 func _on_hex_selected(
@@ -239,33 +273,125 @@ func _on_berry_gatherer_button_pressed() -> void:
 
 
 func _on_wood_changed(amount: int) -> void:
+	current_wood = amount
 	resource_label.text = "Holz: %d" % amount
+	_update_settlement_window_if_visible()
 
 
 func _on_stone_changed(amount: int) -> void:
+	current_stone = amount
 	stone_label.text = "Stein: %d" % amount
+	_update_settlement_window_if_visible()
 
 
 func _on_food_changed(amount: int) -> void:
+	current_food = amount
 	food_label.text = "Nahrung: %d" % amount
+	_update_settlement_window_if_visible()
 
 
 func _on_housing_changed(amount: int) -> void:
 	current_housing_capacity = amount
 	_update_population_housing_label()
+	_update_settlement_window_if_visible()
 
 
 func _on_population_changed(amount: int) -> void:
 	current_population = amount
 	_update_population_housing_label()
+	_update_settlement_window_if_visible()
+
+
+func _on_free_housing_changed(amount: int) -> void:
+	current_free_housing = amount
+	_update_settlement_window_if_visible()
 
 
 func _update_population_housing_label() -> void:
 	population_label.text = "Bewohner: %d / Wohnraum %d" % [current_population, current_housing_capacity]
 
 
-func _on_work_changed(unemployed: int, _lumberjacks: int, _miners: int, _workplaces: int, _free_workplaces: int) -> void:
+func _on_work_changed(unemployed: int, lumberjacks: int, miners: int, workplaces: int, free_workplaces: int) -> void:
+	current_unemployed = unemployed
+	current_lumberjacks = lumberjacks
+	current_miners = miners
+	current_gatherers = hex_grid.berry_gatherer_count
+	current_workplaces = workplaces
+	current_free_workplaces = free_workplaces
+	current_assigned_workplaces = current_workplaces - current_free_workplaces
+	if current_assigned_workplaces < 0:
+		current_assigned_workplaces = 0
 	unemployed_label.text = "Arbeitslos: %d" % unemployed
+	_update_settlement_window_if_visible()
+
+
+func _update_settlement_window_if_visible() -> void:
+	if settlement_window.visible:
+		_update_settlement_window()
+
+
+func _update_settlement_window() -> void:
+	settlement_title_label.text = "Siedlung: %s" % settlement_name
+	var lines: PackedStringArray = PackedStringArray([
+		"Ressourcen",
+		"Holz: %d" % current_wood,
+		"Stein: %d" % current_stone,
+		"Nahrung: %d" % current_food,
+		"",
+		"Bevölkerung",
+		"Bewohner: %d" % current_population,
+		"Wohnraum: %d" % current_housing_capacity,
+		"Freier Wohnraum: %d" % current_free_housing,
+		"Arbeitslos: %d" % current_unemployed,
+		"",
+		"Berufe",
+		"Holzfäller: %d" % current_lumberjacks,
+		"Bergarbeiter: %d" % current_miners,
+		"Sammler: %d" % current_gatherers,
+		"",
+		"Arbeitsplätze",
+		"Gesamt: %d" % current_workplaces,
+		"Belegt: %d" % current_assigned_workplaces,
+		"Frei: %d" % current_free_workplaces,
+		"",
+		"Produktion",
+		"Holz: +%d / 5s" % _calculate_settlement_wood_production(),
+		"Stein: +%d / 5s" % _calculate_settlement_stone_production(),
+		"Nahrung: +%d / 5s" % _calculate_settlement_food_production(),
+	])
+	settlement_content_label.text = "\n".join(lines)
+
+
+func _calculate_settlement_wood_production() -> int:
+	return _calculate_production_from_tiles(hex_grid.lumberjack_hut_tiles, "lumberjack_production")
+
+
+func _calculate_settlement_stone_production() -> int:
+	return _calculate_production_from_tiles(hex_grid.stone_mine_tiles, "stone_production")
+
+
+func _calculate_settlement_food_production() -> int:
+	return _calculate_production_from_tiles(hex_grid.berry_gatherer_tiles, "berry_production")
+
+
+func _calculate_production_from_tiles(tiles: Array, production_meta_name: String) -> int:
+	var production: int = 0
+	for tile_value in tiles:
+		var tile: MeshInstance3D = tile_value as MeshInstance3D
+		if tile == null:
+			continue
+		if not tile.has_meta(production_meta_name):
+			continue
+		if not _tile_has_assigned_worker(tile):
+			continue
+		production += int(tile.get_meta(production_meta_name))
+	return production
+
+
+func _tile_has_assigned_worker(tile: MeshInstance3D) -> bool:
+	if not tile.has_meta("assigned_workers"):
+		return false
+	return int(tile.get_meta("assigned_workers")) > 0
 
 
 func _get_workplaces_for_building_name(building_name: String) -> int:
