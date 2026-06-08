@@ -46,10 +46,13 @@ var info_panel_position: Vector2 = Vector2(16.0, 452.0)
 var info_panel_padding: float = 12.0
 var info_panel_min_width: float = 300.0
 var info_panel_line_spacing: int = 4
+var settlement_window_width: float = 300.0
+var settlement_window_padding: float = 14.0
 
 
 func _ready() -> void:
 	_configure_info_panel()
+	_configure_settlement_window()
 	hex_grid.hex_selected.connect(_on_hex_selected)
 	hex_grid.selection_cleared.connect(_on_selection_cleared)
 	hex_grid.build_mode_changed.connect(_on_build_mode_changed)
@@ -140,9 +143,11 @@ func _on_hex_selected(
 		lines.append("Arbeitsplätze: %d" % building_workplace_count)
 		if building_workplace_count > 0:
 			var workplace_status: String = "belegt" if assigned_workers > 0 else "unbesetzt"
-			var assigned_job_text: String = assigned_job if not assigned_job.is_empty() else "-"
+			var assigned_job_text: String = assigned_job if not assigned_job.is_empty() else _get_job_name_for_building(building_name)
+			var produces_currently_text: String = "ja" if _is_building_currently_producing(building_name, assigned_workers, wood_production, stone_production, food_production) else "nein"
 			lines.append("Arbeitsplatz: %s" % workplace_status)
 			lines.append("Zugewiesener Job: %s" % assigned_job_text)
+			lines.append("Produziert aktuell: %s" % produces_currently_text)
 			lines.append(_get_production_text(building_name, wood_production, stone_production, food_production))
 
 	if has_building and building_name == "Holzfällerhütte":
@@ -207,6 +212,25 @@ func _configure_info_panel() -> void:
 	info_panel.custom_minimum_size = Vector2.ZERO
 	info_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	info_label.add_theme_constant_override("line_spacing", info_panel_line_spacing)
+
+
+func _configure_settlement_window() -> void:
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.04, 0.04, 0.04, 0.78)
+	panel_style.corner_radius_top_left = 6
+	panel_style.corner_radius_top_right = 6
+	panel_style.corner_radius_bottom_left = 6
+	panel_style.corner_radius_bottom_right = 6
+	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
+	panel_style.shadow_size = 8
+	panel_style.set_content_margin(SIDE_LEFT, settlement_window_padding)
+	panel_style.set_content_margin(SIDE_TOP, settlement_window_padding)
+	panel_style.set_content_margin(SIDE_RIGHT, settlement_window_padding)
+	panel_style.set_content_margin(SIDE_BOTTOM, settlement_window_padding)
+	settlement_window.add_theme_stylebox_override("panel", panel_style)
+	settlement_window.custom_minimum_size = Vector2(settlement_window_width, 0.0)
+	settlement_title_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
+	settlement_content_label.add_theme_constant_override("line_spacing", 3)
 
 
 func _set_info_panel_text(text: String) -> void:
@@ -367,11 +391,11 @@ func _calculate_settlement_wood_production() -> int:
 
 
 func _calculate_settlement_stone_production() -> int:
-	return _calculate_production_from_tiles(hex_grid.stone_mine_tiles, "stone_production")
+	return _calculate_production_from_tiles(hex_grid.stone_mine_tiles, "stone_mine_production")
 
 
 func _calculate_settlement_food_production() -> int:
-	return _calculate_production_from_tiles(hex_grid.berry_gatherer_tiles, "berry_production")
+	return _calculate_production_from_tiles(hex_grid.berry_gatherer_tiles, "food_production")
 
 
 func _calculate_production_from_tiles(tiles: Array, production_meta_name: String) -> int:
@@ -400,14 +424,42 @@ func _get_workplaces_for_building_name(building_name: String) -> int:
 	return int(building_workplaces[building_name])
 
 
+func _get_job_name_for_building(building_name: String) -> String:
+	if building_name == "Holzfällerhütte":
+		return "Holzfäller"
+	if building_name == "Steinmine":
+		return "Bergarbeiter"
+	if building_name == "Beerensammler":
+		return "Sammler"
+	return "-"
+
+
+func _is_building_currently_producing(building_name: String, assigned_workers: int, wood_production: int, stone_production: int, food_production: int) -> bool:
+	if assigned_workers <= 0:
+		return false
+	if building_name == "Holzfällerhütte":
+		return wood_production > 0
+	if building_name == "Steinmine":
+		return stone_production > 0
+	if building_name == "Beerensammler":
+		return food_production > 0
+	return false
+
+
 func _get_production_text(building_name: String, wood_production: int, stone_production: int, food_production: int) -> String:
 	if building_name == "Holzfällerhütte":
-		return "Produktion: %d Holz / 5 Sekunden" % wood_production
+		return _format_building_production_text(wood_production, "Holz")
 	if building_name == "Steinmine":
-		return "Produktion: %d Stein / 5 Sekunden" % stone_production
+		return _format_building_production_text(stone_production, "Stein")
 	if building_name == "Beerensammler":
-		return "Produktion: %d Nahrung / 5 Sekunden" % food_production
-	return "Produktion: 0 / 5 Sekunden"
+		return _format_building_production_text(food_production, "Nahrung")
+	return "Produktion: 0 / 5s"
+
+
+func _format_building_production_text(amount: int, resource_name: String) -> String:
+	if amount <= 0:
+		return "Produktion: 0 %s / 5s" % resource_name
+	return "Produktion: +%d %s / 5s" % [amount, resource_name]
 
 
 func _on_message_changed(text: String) -> void:
