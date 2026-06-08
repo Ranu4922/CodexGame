@@ -33,15 +33,11 @@ func _update_growth_info() -> void:
 	var growth_active: bool = bool(population_growth.call("get_growth_active"))
 	var status_text: String = "Aktiv" if growth_active else "Blockiert"
 	var required_food: int = int(population_growth.call("get_required_food"))
-	var current_food: int = int(hex_grid.get("food"))
-	var free_housing: int = int(hex_grid.get("free_housing"))
 	var lines: PackedStringArray = PackedStringArray([
 		"",
 		"Wachstum",
 		"Status: %s" % status_text,
 		"Benötigte Nahrung: %d" % required_food,
-		"Aktuelle Nahrung: %d" % current_food,
-		"Freier Wohnraum: %d" % free_housing,
 	])
 
 	if growth_active:
