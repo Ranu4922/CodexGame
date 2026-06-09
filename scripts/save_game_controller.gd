@@ -198,6 +198,14 @@ func _place_saved_building(building_data: Dictionary) -> void:
 		_place_saved_farm(tile)
 	if building_type == "warehouse":
 		_place_saved_warehouse(tile)
+	_apply_saved_upgrade_data(tile, building_data)
+
+
+func _apply_saved_upgrade_data(tile: MeshInstance3D, building_data: Dictionary) -> void:
+	var upgrade_controller: Node = get_parent().get_node_or_null("BuildingUpgradeController")
+	if upgrade_controller == null:
+		return
+	upgrade_controller.call("apply_saved_upgrade_data", tile, building_data)
 
 
 func _place_saved_farm(tile: MeshInstance3D) -> void:
