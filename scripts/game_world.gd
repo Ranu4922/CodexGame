@@ -57,7 +57,10 @@ var info_panel_padding: float = 12.0
 var info_panel_min_width: float = 260.0
 var info_panel_line_spacing: int = 4
 var info_panel_left_margin: float = 16.0
-var info_panel_bottom_margin: float = 16.0
+var info_panel_top_margin: float = 68.0
+var message_label_width: float = 520.0
+var message_label_top_margin: float = 60.0
+var message_label_right_margin: float = 20.0
 var building_detail_padding: float = 14.0
 var building_detail_min_width: float = 320.0
 var building_detail_line_spacing: int = 4
@@ -253,6 +256,18 @@ func _configure_top_hud() -> void:
 	top_hud_panel.add_theme_stylebox_override("panel", panel_style)
 	build_mode_label.visible = false
 	selected_building_label.visible = false
+	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	message_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.62, 1.0))
+	_position_message_label()
+
+
+func _position_message_label() -> void:
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var message_x: float = viewport_size.x - message_label_width - message_label_right_margin
+	if message_x < 16.0:
+		message_x = 16.0
+	message_label.position = Vector2(message_x, message_label_top_margin)
+	message_label.size = Vector2(message_label_width, 32.0)
 
 
 func _configure_info_panel() -> void:
@@ -420,11 +435,7 @@ func _resize_building_detail_panel_deferred(resize_version: int) -> void:
 func _resize_info_panel_to_content() -> void:
 	var target_size: Vector2 = _calculate_text_panel_size(info_label, info_label.text, info_panel_min_width, info_panel_padding, info_panel_line_spacing)
 	var label_size: Vector2 = Vector2(target_size.x - info_panel_padding * 2.0, target_size.y - info_panel_padding * 2.0)
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	var panel_y: float = viewport_size.y - target_size.y - info_panel_bottom_margin
-	if panel_y < 96.0:
-		panel_y = 96.0
-	info_panel.position = Vector2(info_panel_left_margin, panel_y)
+	info_panel.position = Vector2(info_panel_left_margin, info_panel_top_margin)
 	info_panel.custom_minimum_size = target_size
 	info_panel.size = target_size
 	info_label.custom_minimum_size = label_size
@@ -619,6 +630,7 @@ func _format_building_production_text(amount: int, resource_name: String) -> Str
 func _on_message_changed(text: String) -> void:
 	message_version += 1
 	var current_version: int = message_version
+	_position_message_label()
 	message_label.text = text
 	_clear_message_after_delay(current_version)
 
