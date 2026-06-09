@@ -19,6 +19,7 @@ extends Node3D
 @onready var house_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/HouseButton
 @onready var stone_mine_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/StoneMineButton
 @onready var berry_gatherer_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/BerryGathererButton
+@onready var warehouse_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/WarehouseButton
 
 var message_version: int = 0
 var selected_building_name: String = "-"
@@ -53,6 +54,7 @@ var settlement_window_padding: float = 14.0
 func _ready() -> void:
 	_configure_info_panel()
 	_configure_settlement_window()
+	_configure_build_menu()
 	hex_grid.hex_selected.connect(_on_hex_selected)
 	hex_grid.selection_cleared.connect(_on_selection_cleared)
 	hex_grid.build_mode_changed.connect(_on_build_mode_changed)
@@ -181,6 +183,7 @@ func _on_build_mode_changed(enabled: bool) -> void:
 	_update_build_mode_label(enabled)
 	build_menu.visible = enabled
 	selected_building_label.visible = false
+	_update_build_menu_selection()
 	build_mode_label.add_theme_color_override(
 		"font_color",
 		Color(0.20, 0.85, 0.25) if enabled else Color(0.95, 0.20, 0.18)
@@ -191,11 +194,12 @@ func _on_selected_building_changed(display_name: String) -> void:
 	selected_building_name = display_name
 	selected_building_label.text = "Ausgewähltes Gebäude: %s" % selected_building_name
 	_update_build_mode_label(hex_grid.build_mode)
+	_update_build_menu_selection()
 
 
 func _update_build_mode_label(enabled: bool) -> void:
 	if enabled:
-		build_mode_label.text = "Baumodus: AN (%s)" % selected_building_name
+		build_mode_label.text = "Baumodus: AN"
 	else:
 		build_mode_label.text = "Baumodus: AUS"
 
@@ -231,6 +235,65 @@ func _configure_settlement_window() -> void:
 	settlement_window.custom_minimum_size = Vector2(settlement_window_width, 0.0)
 	settlement_title_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
 	settlement_content_label.add_theme_constant_override("line_spacing", 3)
+
+
+func _configure_build_menu() -> void:
+	lumberjack_button.text = "Holzfällerhütte - 5 Holz"
+	house_button.text = "Wohnhaus - 10 Holz"
+	stone_mine_button.text = "Steinmine - 10 Holz"
+	berry_gatherer_button.text = "Beerensammler - 10 Holz"
+	warehouse_button.text = "Lagerhaus - 20 Holz, 10 Stein"
+	_update_build_menu_selection()
+
+
+func _update_build_menu_selection() -> void:
+	_style_build_button(lumberjack_button, selected_building_name == "Holzfällerhütte", _can_afford_building(5, 0))
+	_style_build_button(house_button, selected_building_name == "Wohnhaus", _can_afford_building(10, 0))
+	_style_build_button(stone_mine_button, selected_building_name == "Steinmine", _can_afford_building(10, 0))
+	_style_build_button(berry_gatherer_button, selected_building_name == "Beerensammler", _can_afford_building(10, 0))
+	_style_build_button(warehouse_button, selected_building_name == "Lagerhaus", _can_afford_building(20, 10))
+
+
+func _can_afford_building(wood_cost: int, stone_cost: int) -> bool:
+	return current_wood >= wood_cost and current_stone >= stone_cost
+
+
+func _style_build_button(button: Button, selected: bool, affordable: bool) -> void:
+	var background_color: Color = Color(0.09, 0.10, 0.10, 0.90)
+	var border_color: Color = Color(0.22, 0.24, 0.24, 1.0)
+	var font_color: Color = Color(0.92, 0.92, 0.88, 1.0)
+	var border_width: int = 1
+	if not affordable:
+		font_color = Color(0.95, 0.38, 0.32, 1.0)
+	if selected:
+		background_color = Color(0.22, 0.34, 0.20, 0.95)
+		border_color = Color(0.45, 0.86, 0.38, 1.0)
+		font_color = Color(1.0, 1.0, 0.92, 1.0)
+		border_width = 2
+
+	button.add_theme_stylebox_override("normal", _make_button_style(background_color, border_color, border_width))
+	button.add_theme_stylebox_override("hover", _make_button_style(background_color.lightened(0.08), border_color, border_width))
+	button.add_theme_stylebox_override("pressed", _make_button_style(background_color.darkened(0.08), border_color, border_width))
+	button.add_theme_stylebox_override("focus", _make_button_style(background_color, border_color, border_width))
+	button.add_theme_color_override("font_color", font_color)
+	button.add_theme_color_override("font_hover_color", font_color)
+	button.add_theme_color_override("font_pressed_color", font_color)
+
+
+func _make_button_style(background_color: Color, border_color: Color, border_width: int) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = background_color
+	style.border_color = border_color
+	style.set_border_width_all(border_width)
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	style.set_content_margin(SIDE_LEFT, 8.0)
+	style.set_content_margin(SIDE_RIGHT, 8.0)
+	style.set_content_margin(SIDE_TOP, 5.0)
+	style.set_content_margin(SIDE_BOTTOM, 5.0)
+	return style
 
 
 func _set_info_panel_text(text: String) -> void:
@@ -299,12 +362,14 @@ func _on_berry_gatherer_button_pressed() -> void:
 func _on_wood_changed(amount: int) -> void:
 	current_wood = amount
 	resource_label.text = "Holz: %d" % amount
+	_update_build_menu_selection()
 	_update_settlement_window_if_visible()
 
 
 func _on_stone_changed(amount: int) -> void:
 	current_stone = amount
 	stone_label.text = "Stein: %d" % amount
+	_update_build_menu_selection()
 	_update_settlement_window_if_visible()
 
 
