@@ -14,11 +14,14 @@ const SettlementWindowFormatter = preload("res://scripts/ui/settlement_window_fo
 @onready var unemployed_label: Label = $CanvasLayer/UnemployedLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
+@onready var top_hud_panel: Panel = $CanvasLayer/TopHudPanel
 @onready var settlement_window: PanelContainer = $CanvasLayer/SettlementWindow
 @onready var settlement_title_label: Label = $CanvasLayer/SettlementWindow/VBoxContainer/TitleLabel
 @onready var settlement_content_label: Label = $CanvasLayer/SettlementWindow/VBoxContainer/ContentLabel
 @onready var info_panel: PanelContainer = $CanvasLayer/InfoPanel
 @onready var info_label: Label = $CanvasLayer/InfoPanel/InfoLabel
+@onready var building_detail_panel: PanelContainer = $CanvasLayer/BuildingDetailPanel
+@onready var building_detail_label: Label = $CanvasLayer/BuildingDetailPanel/BuildingDetailLabel
 @onready var build_menu: PanelContainer = $CanvasLayer/BuildMenu
 @onready var lumberjack_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/LumberjackButton
 @onready var house_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/HouseButton
@@ -46,18 +49,28 @@ var building_workplaces: Dictionary = {
 	"Holzfällerhütte": 1,
 	"Steinmine": 1,
 	"Beerensammler": 1,
+	"Bauernhof": 1,
 }
 var info_panel_resize_version: int = 0
-var info_panel_position: Vector2 = Vector2(16.0, 452.0)
+var building_detail_resize_version: int = 0
 var info_panel_padding: float = 12.0
-var info_panel_min_width: float = 300.0
+var info_panel_min_width: float = 260.0
 var info_panel_line_spacing: int = 4
+var info_panel_left_margin: float = 16.0
+var info_panel_bottom_margin: float = 16.0
+var building_detail_padding: float = 14.0
+var building_detail_min_width: float = 320.0
+var building_detail_line_spacing: int = 4
+var building_detail_right_margin: float = 20.0
+var building_detail_bottom_margin: float = 20.0
 var settlement_window_width: float = 300.0
 var settlement_window_padding: float = 14.0
 
 
 func _ready() -> void:
+	_configure_top_hud()
 	_configure_info_panel()
+	_configure_building_detail_panel()
 	_configure_settlement_window()
 	_configure_build_menu()
 	hex_grid.hex_selected.connect(_on_hex_selected)
@@ -135,75 +148,111 @@ func _on_hex_selected(
 	var building_text: String = "nein"
 	if has_building:
 		building_text = building_name if not building_name.is_empty() else "ja"
-	var settlement_text: String = "Ja" if in_settlement_area else "Nein"
-	var lines: PackedStringArray = PackedStringArray([
+	var hex_lines: PackedStringArray = PackedStringArray([
 		"Koordinaten: q=%d, r=%d" % [q, r],
 		"Tile-Typ: %s" % tile_type,
 		"Bebaubar: %s" % buildable_text,
 		"Gebäude: %s" % building_text,
-		"Im Siedlungsgebiet: %s" % settlement_text,
-		"Entfernung zum Dorfzentrum: %d" % village_center_distance,
 	])
+	_set_info_panel_text("\n".join(hex_lines))
 
 	if has_building:
-		var building_workplace_count: int = _get_workplaces_for_building_name(building_name)
-		lines.append("Arbeitsplätze: %d" % building_workplace_count)
-		if building_workplace_count > 0:
-			var workplace_status: String = "belegt" if assigned_workers > 0 else "unbesetzt"
-			var assigned_job_text: String = assigned_job if not assigned_job.is_empty() else _get_job_name_for_building(building_name)
-			var produces_currently_text: String = "ja" if _is_building_currently_producing(building_name, assigned_workers, wood_production, stone_production, food_production) else "nein"
-			lines.append("Arbeitsplatz: %s" % workplace_status)
-			lines.append("Zugewiesener Job: %s" % assigned_job_text)
-			lines.append("Produziert aktuell: %s" % produces_currently_text)
-			lines.append(_get_production_text(building_name, wood_production, stone_production, food_production))
+		var detail_lines: PackedStringArray = _create_building_detail_lines(
+			building_name,
+			assigned_workers,
+			assigned_job,
+			own_forest,
+			adjacent_forests,
+			wood_production,
+			food_production,
+			own_stone,
+			adjacent_stones,
+			stone_production,
+			in_settlement_area,
+			village_center_distance
+		)
+		_set_building_detail_panel_text("\n".join(detail_lines))
+	else:
+		_hide_building_detail_panel()
 
-	if has_building and building_name == "Holzfällerhütte":
+
+func _create_building_detail_lines(
+	building_name: String,
+	assigned_workers: int,
+	assigned_job: String,
+	own_forest: bool,
+	adjacent_forests: int,
+	wood_production: int,
+	food_production: int,
+	own_stone: bool,
+	adjacent_stones: int,
+	stone_production: int,
+	in_settlement_area: bool,
+	village_center_distance: int
+) -> PackedStringArray:
+	var lines: PackedStringArray = PackedStringArray(["Gebäude: %s" % building_name])
+	var settlement_text: String = "Ja" if in_settlement_area else "Nein"
+	lines.append("Im Siedlungsgebiet: %s" % settlement_text)
+	lines.append("Entfernung zum Dorfzentrum: %d" % village_center_distance)
+
+	var building_workplace_count: int = _get_workplaces_for_building_name(building_name)
+	if building_workplace_count > 0:
+		var workplace_status: String = "belegt" if assigned_workers > 0 else "unbesetzt"
+		var assigned_job_text: String = assigned_job if not assigned_job.is_empty() else _get_job_name_for_building(building_name)
+		var produces_currently_text: String = "ja" if _is_building_currently_producing(building_name, assigned_workers, wood_production, stone_production, food_production) else "nein"
+		lines.append("Arbeitsplätze: %d" % building_workplace_count)
+		lines.append("Arbeitsplatz: %s" % workplace_status)
+		lines.append("Zugewiesener Job: %s" % assigned_job_text)
+		lines.append("Produziert aktuell: %s" % produces_currently_text)
+		lines.append(_get_production_text(building_name, wood_production, stone_production, food_production))
+
+	if building_name == "Holzfällerhütte":
 		var own_forest_text: String = "ja" if own_forest else "nein"
 		lines.append("Eigenes Wald-Hex: %s" % own_forest_text)
 		lines.append("Angrenzende Wälder: %d/6" % adjacent_forests)
 
-	if has_building and building_name == "Beerensammler":
+	if building_name == "Beerensammler":
 		var berry_own_forest_text: String = "ja" if own_forest else "nein"
 		lines.append("Eigenes Wald-Hex: %s" % berry_own_forest_text)
 
-	if has_building and building_name == "Steinmine":
+	if building_name == "Steinmine":
 		var own_stone_text: String = "ja" if own_stone else "nein"
 		lines.append("Eigenes Stein-Hex: %s" % own_stone_text)
 		lines.append("Angrenzende Steine: %d/6" % adjacent_stones)
-
-	_set_info_panel_text("\n".join(lines))
+	return lines
 
 
 func _on_selection_cleared() -> void:
 	info_panel_resize_version += 1
+	building_detail_resize_version += 1
 	info_panel.visible = false
 	info_label.text = ""
 	info_label.custom_minimum_size = Vector2.ZERO
 	info_label.size = Vector2.ZERO
 	info_panel.custom_minimum_size = Vector2.ZERO
 	info_panel.size = Vector2.ZERO
+	_hide_building_detail_panel()
 
 
 func _on_build_mode_changed(enabled: bool) -> void:
-	_update_build_mode_label(enabled)
+	build_mode_label.visible = false
 	build_menu.visible = enabled
 	selected_building_label.visible = false
 	_update_build_menu_selection()
-	build_mode_label.add_theme_color_override(
-		"font_color",
-		Color(0.20, 0.85, 0.25) if enabled else Color(0.95, 0.20, 0.18)
-	)
 
 
 func _on_selected_building_changed(display_name: String) -> void:
 	selected_building_name = display_name
 	selected_building_label.text = "Ausgewähltes Gebäude: %s" % selected_building_name
-	_update_build_mode_label(hex_grid.build_mode)
 	_update_build_menu_selection()
 
 
-func _update_build_mode_label(enabled: bool) -> void:
-	build_mode_label.text = HudTextFormatter.build_mode_text(enabled)
+func _configure_top_hud() -> void:
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.04, 0.04, 0.04, 0.55)
+	top_hud_panel.add_theme_stylebox_override("panel", panel_style)
+	build_mode_label.visible = false
+	selected_building_label.visible = false
 
 
 func _configure_info_panel() -> void:
@@ -214,10 +263,26 @@ func _configure_info_panel() -> void:
 	panel_style.set_content_margin(SIDE_RIGHT, info_panel_padding)
 	panel_style.set_content_margin(SIDE_BOTTOM, info_panel_padding)
 	info_panel.add_theme_stylebox_override("panel", panel_style)
-	info_panel.position = info_panel_position
 	info_panel.custom_minimum_size = Vector2.ZERO
 	info_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	info_label.add_theme_constant_override("line_spacing", info_panel_line_spacing)
+
+
+func _configure_building_detail_panel() -> void:
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.05, 0.05, 0.05, 0.76)
+	panel_style.corner_radius_top_left = 4
+	panel_style.corner_radius_top_right = 4
+	panel_style.corner_radius_bottom_left = 4
+	panel_style.corner_radius_bottom_right = 4
+	panel_style.set_content_margin(SIDE_LEFT, building_detail_padding)
+	panel_style.set_content_margin(SIDE_TOP, building_detail_padding)
+	panel_style.set_content_margin(SIDE_RIGHT, building_detail_padding)
+	panel_style.set_content_margin(SIDE_BOTTOM, building_detail_padding)
+	building_detail_panel.add_theme_stylebox_override("panel", panel_style)
+	building_detail_panel.custom_minimum_size = Vector2.ZERO
+	building_detail_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	building_detail_label.add_theme_constant_override("line_spacing", building_detail_line_spacing)
 
 
 func _configure_settlement_window() -> void:
@@ -306,10 +371,32 @@ func _set_info_panel_text(text: String) -> void:
 	info_label.size = Vector2.ZERO
 	info_panel.custom_minimum_size = Vector2.ZERO
 	info_panel.size = Vector2.ZERO
-	info_panel.position = info_panel_position
 	info_panel.visible = true
 	_resize_info_panel_to_content()
 	_resize_info_panel_deferred(current_resize_version)
+
+
+func _set_building_detail_panel_text(text: String) -> void:
+	building_detail_resize_version += 1
+	var current_resize_version: int = building_detail_resize_version
+	building_detail_label.text = text
+	building_detail_label.custom_minimum_size = Vector2.ZERO
+	building_detail_label.size = Vector2.ZERO
+	building_detail_panel.custom_minimum_size = Vector2.ZERO
+	building_detail_panel.size = Vector2.ZERO
+	building_detail_panel.visible = true
+	_resize_building_detail_panel_to_content()
+	_resize_building_detail_panel_deferred(current_resize_version)
+
+
+func _hide_building_detail_panel() -> void:
+	building_detail_resize_version += 1
+	building_detail_panel.visible = false
+	building_detail_label.text = ""
+	building_detail_label.custom_minimum_size = Vector2.ZERO
+	building_detail_label.size = Vector2.ZERO
+	building_detail_panel.custom_minimum_size = Vector2.ZERO
+	building_detail_panel.size = Vector2.ZERO
 
 
 func _resize_info_panel_deferred(resize_version: int) -> void:
@@ -321,28 +408,64 @@ func _resize_info_panel_deferred(resize_version: int) -> void:
 	_resize_info_panel_to_content()
 
 
+func _resize_building_detail_panel_deferred(resize_version: int) -> void:
+	await get_tree().process_frame
+	if resize_version != building_detail_resize_version:
+		return
+	if not building_detail_panel.visible:
+		return
+	_resize_building_detail_panel_to_content()
+
+
 func _resize_info_panel_to_content() -> void:
-	var font: Font = info_label.get_theme_font("font")
-	var font_size: int = info_label.get_theme_font_size("font_size")
-	var text_lines: PackedStringArray = info_label.text.split("\n")
-	var text_width: float = 0.0
-
-	for text_line in text_lines:
-		var line_size: Vector2 = font.get_string_size(text_line, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
-		text_width = max(text_width, line_size.x)
-
-	var line_height: float = font.get_height(font_size) + float(info_panel_line_spacing) + 4.0
-	var text_height: float = float(text_lines.size()) * line_height
-	var target_width: float = max(info_panel_min_width, text_width + info_panel_padding * 2.0)
-	var target_height: float = text_height + info_panel_padding * 2.0
-	var target_size: Vector2 = Vector2(target_width, target_height)
-	var label_size: Vector2 = Vector2(text_width, text_height)
-
-	info_panel.position = info_panel_position
+	var target_size: Vector2 = _calculate_text_panel_size(info_label, info_label.text, info_panel_min_width, info_panel_padding, info_panel_line_spacing)
+	var label_size: Vector2 = Vector2(target_size.x - info_panel_padding * 2.0, target_size.y - info_panel_padding * 2.0)
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var panel_y: float = viewport_size.y - target_size.y - info_panel_bottom_margin
+	if panel_y < 96.0:
+		panel_y = 96.0
+	info_panel.position = Vector2(info_panel_left_margin, panel_y)
 	info_panel.custom_minimum_size = target_size
 	info_panel.size = target_size
 	info_label.custom_minimum_size = label_size
 	info_label.size = label_size
+
+
+func _resize_building_detail_panel_to_content() -> void:
+	var target_size: Vector2 = _calculate_text_panel_size(building_detail_label, building_detail_label.text, building_detail_min_width, building_detail_padding, building_detail_line_spacing)
+	var label_size: Vector2 = Vector2(target_size.x - building_detail_padding * 2.0, target_size.y - building_detail_padding * 2.0)
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var panel_x: float = viewport_size.x - target_size.x - building_detail_right_margin
+	var panel_y: float = viewport_size.y - target_size.y - building_detail_bottom_margin
+	if panel_x < 420.0:
+		panel_x = 420.0
+	if panel_y < 110.0:
+		panel_y = 110.0
+	building_detail_panel.position = Vector2(panel_x, panel_y)
+	building_detail_panel.custom_minimum_size = target_size
+	building_detail_panel.size = target_size
+	building_detail_label.custom_minimum_size = label_size
+	building_detail_label.size = label_size
+
+
+func _calculate_text_panel_size(label: Label, text: String, min_width: float, padding: float, line_spacing: int) -> Vector2:
+	var font: Font = label.get_theme_font("font")
+	var font_size: int = label.get_theme_font_size("font_size")
+	var text_lines: PackedStringArray = text.split("\n")
+	var text_width: float = 0.0
+
+	for text_line in text_lines:
+		var line_size: Vector2 = font.get_string_size(text_line, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+		if line_size.x > text_width:
+			text_width = line_size.x
+
+	var line_height: float = font.get_height(font_size) + float(line_spacing) + 4.0
+	var text_height: float = float(text_lines.size()) * line_height
+	var target_width: float = text_width + padding * 2.0
+	if target_width < min_width:
+		target_width = min_width
+	var target_height: float = text_height + padding * 2.0
+	return Vector2(target_width, target_height)
 
 
 func _on_lumberjack_button_pressed() -> void:
