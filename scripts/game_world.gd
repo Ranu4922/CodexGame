@@ -1,5 +1,10 @@
 extends Node3D
 
+const BuildingInfoFormatter = preload("res://scripts/ui/building_info_formatter.gd")
+const HudTextFormatter = preload("res://scripts/ui/hud_text_formatter.gd")
+const ProductionCalculator = preload("res://scripts/systems/production_calculator.gd")
+const SettlementWindowFormatter = preload("res://scripts/ui/settlement_window_formatter.gd")
+
 @onready var hex_grid: Node3D = $HexGrid
 @onready var build_mode_label: Label = $CanvasLayer/BuildModeLabel
 @onready var resource_label: Label = $CanvasLayer/ResourceLabel
@@ -198,10 +203,7 @@ func _on_selected_building_changed(display_name: String) -> void:
 
 
 func _update_build_mode_label(enabled: bool) -> void:
-	if enabled:
-		build_mode_label.text = "Baumodus: AN"
-	else:
-		build_mode_label.text = "Baumodus: AUS"
+	build_mode_label.text = HudTextFormatter.build_mode_text(enabled)
 
 
 func _configure_info_panel() -> void:
@@ -361,21 +363,21 @@ func _on_berry_gatherer_button_pressed() -> void:
 
 func _on_wood_changed(amount: int) -> void:
 	current_wood = amount
-	resource_label.text = "Holz: %d" % amount
+	resource_label.text = HudTextFormatter.wood_text(amount)
 	_update_build_menu_selection()
 	_update_settlement_window_if_visible()
 
 
 func _on_stone_changed(amount: int) -> void:
 	current_stone = amount
-	stone_label.text = "Stein: %d" % amount
+	stone_label.text = HudTextFormatter.stone_text(amount)
 	_update_build_menu_selection()
 	_update_settlement_window_if_visible()
 
 
 func _on_food_changed(amount: int) -> void:
 	current_food = amount
-	food_label.text = "Nahrung: %d" % amount
+	food_label.text = HudTextFormatter.food_text(amount)
 	_update_settlement_window_if_visible()
 
 
@@ -397,7 +399,7 @@ func _on_free_housing_changed(amount: int) -> void:
 
 
 func _update_population_housing_label() -> void:
-	population_label.text = "Bewohner: %d / Wohnraum %d" % [current_population, current_housing_capacity]
+	population_label.text = HudTextFormatter.population_text(current_population, current_housing_capacity)
 
 
 func _on_work_changed(unemployed: int, lumberjacks: int, miners: int, workplaces: int, free_workplaces: int) -> void:
@@ -410,7 +412,7 @@ func _on_work_changed(unemployed: int, lumberjacks: int, miners: int, workplaces
 	current_assigned_workplaces = current_workplaces - current_free_workplaces
 	if current_assigned_workplaces < 0:
 		current_assigned_workplaces = 0
-	unemployed_label.text = "Arbeitslos: %d" % unemployed
+	unemployed_label.text = HudTextFormatter.unemployed_text(unemployed)
 	_update_settlement_window_if_visible()
 
 
@@ -421,33 +423,25 @@ func _update_settlement_window_if_visible() -> void:
 
 func _update_settlement_window() -> void:
 	settlement_title_label.text = "Siedlung: %s" % settlement_name
-	var lines: PackedStringArray = PackedStringArray([
-		"Ressourcen",
-		"Holz: %d" % current_wood,
-		"Stein: %d" % current_stone,
-		"Nahrung: %d" % current_food,
-		"",
-		"Bevölkerung",
-		"Bewohner: %d" % current_population,
-		"Wohnraum: %d" % current_housing_capacity,
-		"Freier Wohnraum: %d" % current_free_housing,
-		"Arbeitslos: %d" % current_unemployed,
-		"",
-		"Berufe",
-		"Holzfäller: %d" % current_lumberjacks,
-		"Bergarbeiter: %d" % current_miners,
-		"Sammler: %d" % current_gatherers,
-		"",
-		"Arbeitsplätze",
-		"Gesamt: %d" % current_workplaces,
-		"Belegt: %d" % current_assigned_workplaces,
-		"Frei: %d" % current_free_workplaces,
-		"",
-		"Produktion",
-		"Holz: +%d / 5s" % _calculate_settlement_wood_production(),
-		"Stein: +%d / 5s" % _calculate_settlement_stone_production(),
-		"Nahrung: +%d / 5s" % _calculate_settlement_food_production(),
-	])
+	var data: Dictionary = {
+		"wood": current_wood,
+		"stone": current_stone,
+		"food": current_food,
+		"population": current_population,
+		"housing_capacity": current_housing_capacity,
+		"free_housing": current_free_housing,
+		"unemployed": current_unemployed,
+		"lumberjacks": current_lumberjacks,
+		"miners": current_miners,
+		"gatherers": current_gatherers,
+		"workplaces": current_workplaces,
+		"assigned_workplaces": current_assigned_workplaces,
+		"free_workplaces": current_free_workplaces,
+		"wood_production": _calculate_settlement_wood_production(),
+		"stone_production": _calculate_settlement_stone_production(),
+		"food_production": _calculate_settlement_food_production(),
+	}
+	var lines: PackedStringArray = SettlementWindowFormatter.create_lines(data)
 	settlement_content_label.text = "\n".join(lines)
 
 
@@ -464,67 +458,31 @@ func _calculate_settlement_food_production() -> int:
 
 
 func _calculate_production_from_tiles(tiles: Array, production_meta_name: String) -> int:
-	var production: int = 0
-	for tile_value in tiles:
-		var tile: MeshInstance3D = tile_value as MeshInstance3D
-		if tile == null:
-			continue
-		if not tile.has_meta(production_meta_name):
-			continue
-		if not _tile_has_assigned_worker(tile):
-			continue
-		production += int(tile.get_meta(production_meta_name))
-	return production
+	return ProductionCalculator.calculate_from_tiles(tiles, production_meta_name)
 
 
 func _tile_has_assigned_worker(tile: MeshInstance3D) -> bool:
-	if not tile.has_meta("assigned_workers"):
-		return false
-	return int(tile.get_meta("assigned_workers")) > 0
+	return ProductionCalculator.tile_has_assigned_worker(tile)
 
 
 func _get_workplaces_for_building_name(building_name: String) -> int:
-	if not building_workplaces.has(building_name):
-		return 0
-	return int(building_workplaces[building_name])
+	return BuildingInfoFormatter.get_workplaces_for_building_name(building_workplaces, building_name)
 
 
 func _get_job_name_for_building(building_name: String) -> String:
-	if building_name == "Holzfällerhütte":
-		return "Holzfäller"
-	if building_name == "Steinmine":
-		return "Bergarbeiter"
-	if building_name == "Beerensammler":
-		return "Sammler"
-	return "-"
+	return BuildingInfoFormatter.get_job_name_for_building(building_name)
 
 
 func _is_building_currently_producing(building_name: String, assigned_workers: int, wood_production: int, stone_production: int, food_production: int) -> bool:
-	if assigned_workers <= 0:
-		return false
-	if building_name == "Holzfällerhütte":
-		return wood_production > 0
-	if building_name == "Steinmine":
-		return stone_production > 0
-	if building_name == "Beerensammler":
-		return food_production > 0
-	return false
+	return BuildingInfoFormatter.is_building_currently_producing(building_name, assigned_workers, wood_production, stone_production, food_production)
 
 
 func _get_production_text(building_name: String, wood_production: int, stone_production: int, food_production: int) -> String:
-	if building_name == "Holzfällerhütte":
-		return _format_building_production_text(wood_production, "Holz")
-	if building_name == "Steinmine":
-		return _format_building_production_text(stone_production, "Stein")
-	if building_name == "Beerensammler":
-		return _format_building_production_text(food_production, "Nahrung")
-	return "Produktion: 0 / 5s"
+	return BuildingInfoFormatter.get_cycle_production_text(building_name, wood_production, stone_production, food_production)
 
 
 func _format_building_production_text(amount: int, resource_name: String) -> String:
-	if amount <= 0:
-		return "Produktion: 0 %s / 5s" % resource_name
-	return "Produktion: +%d %s / 5s" % [amount, resource_name]
+	return BuildingInfoFormatter.format_cycle_production_text(amount, resource_name)
 
 
 func _on_message_changed(text: String) -> void:
