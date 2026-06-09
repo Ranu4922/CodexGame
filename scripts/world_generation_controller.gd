@@ -11,8 +11,14 @@ var tiles_by_coords: Dictionary = {}
 
 
 func _ready() -> void:
+	call_deferred("_run_world_generation")
+
+
+func _run_world_generation() -> void:
 	tile_materials = hex_grid.get("tile_materials") as Dictionary
 	tiles_by_coords = hex_grid.get("tiles_by_coords") as Dictionary
+	if tiles_by_coords.is_empty():
+		return
 	_generate_clustered_world()
 	_reposition_village_center()
 	_refresh_village_influence()
