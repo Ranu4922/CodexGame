@@ -75,7 +75,8 @@ func _reset_selection_and_build_mode() -> void:
 func _reset_runtime_controllers() -> void:
 	var farm_controller: Node = get_parent().get_node_or_null("FarmController")
 	if farm_controller != null:
-		farm_controller.set("farm_tiles", [])
+		var farm_tiles: Array = farm_controller.get("farm_tiles") as Array
+		farm_tiles.clear()
 		farm_controller.set("farmer_count", 0)
 		farm_controller.set("production_timer", 0.0)
 		farm_controller.set("farm_selected", false)
@@ -128,15 +129,19 @@ func _remove_building_children(tile: MeshInstance3D) -> void:
 
 
 func _reset_hex_grid_runtime_state() -> void:
-	hex_grid.set("lumberjack_hut_tiles", [])
-	hex_grid.set("stone_mine_tiles", [])
-	hex_grid.set("berry_gatherer_tiles", [])
+	var lumberjack_hut_tiles: Array = hex_grid.get("lumberjack_hut_tiles") as Array
+	lumberjack_hut_tiles.clear()
+	var stone_mine_tiles: Array = hex_grid.get("stone_mine_tiles") as Array
+	stone_mine_tiles.clear()
+	var berry_gatherer_tiles: Array = hex_grid.get("berry_gatherer_tiles") as Array
+	berry_gatherer_tiles.clear()
 	hex_grid.set("production_timer", 0.0)
 	hex_grid.set("food_consumption_timer", 0.0)
 	hex_grid.set("wood", int(hex_grid.get("starting_wood")))
 	hex_grid.set("stone", int(hex_grid.get("starting_stone")))
 	hex_grid.set("food", int(hex_grid.get("starting_food")))
-	hex_grid.set("residents", [])
+	var residents: Array = hex_grid.get("residents") as Array
+	residents.clear()
 	hex_grid.set("lumberjack_count", 0)
 	hex_grid.set("miner_count", 0)
 	hex_grid.set("berry_gatherer_count", 0)
