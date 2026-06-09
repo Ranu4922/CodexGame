@@ -95,34 +95,34 @@ text = ""
 visible = false
 offset_left = 16.0
 offset_top = 246.0
-offset_right = 240.0
+offset_right = 360.0
 offset_bottom = 452.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/BuildMenu"]
 offset_left = 7.0
 offset_top = 7.0
-offset_right = 217.0
+offset_right = 337.0
 offset_bottom = 199.0
 
 [node name="LumberjackButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
-text = "Holzfällerhütte"
+text = "Holzfällerhütte - 5 Holz"
 
 [node name="HouseButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
-text = "Wohnhaus"
+text = "Wohnhaus - 10 Holz"
 
 [node name="StoneMineButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
-text = "Steinmine"
+text = "Steinmine - 10 Holz"
 
 [node name="BerryGathererButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
-text = "Beerensammler"
+text = "Beerensammler - 10 Holz"
 
 [node name="WarehouseButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
-text = "Lagerhaus"
+text = "Lagerhaus - 20 Holz, 10 Stein"
 
 [node name="SettlementWindow" type="PanelContainer" parent="CanvasLayer"]
 visible = false
