@@ -1,5 +1,8 @@
 extends Node
 
+const ProductionCalculator = preload("res://scripts/systems/production_calculator.gd")
+const HudTextFormatter = preload("res://scripts/ui/hud_text_formatter.gd")
+
 @onready var game_world: Node = get_parent()
 @onready var hex_grid: Node = get_parent().get_node("HexGrid")
 @onready var farm_controller: Node = get_parent().get_node("FarmController")
@@ -107,7 +110,7 @@ func _update_info_panel_production_line(building_name: String, wood_production: 
 
 func _update_unemployed_label() -> void:
 	var adjusted_unemployed: int = int(farm_controller.call("get_adjusted_unemployed_count"))
-	unemployed_label.text = "Arbeitslos: %d" % adjusted_unemployed
+	unemployed_label.text = HudTextFormatter.unemployed_text(adjusted_unemployed)
 
 
 func _update_settlement_window_display() -> void:
@@ -156,25 +159,9 @@ func _update_settlement_window_display() -> void:
 
 
 func _calculate_production_from_tiles(tiles: Array, production_meta_name: String) -> int:
-	var production: int = 0
-	for tile_value in tiles:
-		var tile: MeshInstance3D = tile_value as MeshInstance3D
-		if tile == null:
-			continue
-		if not tile.has_meta(production_meta_name):
-			continue
-		if not tile.has_meta("assigned_workers"):
-			continue
-		if int(tile.get_meta("assigned_workers")) <= 0:
-			continue
-		production += int(tile.get_meta(production_meta_name))
-	return production
+	return ProductionCalculator.calculate_from_tiles(tiles, production_meta_name)
 
 
 func _format_rate(amount_per_cycle: int) -> String:
 	var production_interval: float = float(hex_grid.get("production_interval"))
-	if production_interval <= 0.0:
-		return "0,0"
-	var rate: float = float(amount_per_cycle) / production_interval
-	var rate_text: String = "%.1f" % rate
-	return rate_text.replace(".", ",")
+	return ProductionCalculator.format_rate(amount_per_cycle, production_interval)
