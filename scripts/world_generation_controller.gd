@@ -5,6 +5,9 @@ extends Node
 @export var stone_cluster_count: int = 4
 
 @onready var hex_grid: Node = get_parent().get_node("HexGrid")
+@onready var settlement_window: PanelContainer = get_parent().get_node("CanvasLayer/SettlementWindow")
+@onready var settlement_content_label: Label = get_parent().get_node("CanvasLayer/SettlementWindow/VBoxContainer/ContentLabel")
+@onready var info_panel: PanelContainer = get_parent().get_node("CanvasLayer/InfoPanel")
 
 var tile_materials: Dictionary = {}
 var tiles_by_coords: Dictionary = {}
@@ -12,6 +15,18 @@ var tiles_by_coords: Dictionary = {}
 
 func _ready() -> void:
 	call_deferred("_run_world_generation")
+
+
+func _process(_delta: float) -> void:
+	_update_seed_display()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_N:
+			_regenerate_with_random_seed()
+			get_viewport().set_input_as_handled()
 
 
 func _run_world_generation() -> void:
@@ -22,6 +37,122 @@ func _run_world_generation() -> void:
 	_generate_clustered_world()
 	_reposition_village_center()
 	_refresh_village_influence()
+
+
+func _regenerate_with_random_seed() -> void:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.randomize()
+	var new_seed: int = rng.randi_range(1, 2147483647)
+	hex_grid.set("generation_seed", new_seed)
+	_regenerate_current_world()
+	hex_grid.emit_signal("message_changed", "Neue Welt: Seed %d" % new_seed)
+
+
+func _regenerate_current_world() -> void:
+	tile_materials = hex_grid.get("tile_materials") as Dictionary
+	tiles_by_coords = hex_grid.get("tiles_by_coords") as Dictionary
+	if tiles_by_coords.is_empty():
+		return
+	_reset_selection_and_build_mode()
+	_reset_runtime_controllers()
+	_clear_all_buildings()
+	_reset_hex_grid_runtime_state()
+	_generate_clustered_world()
+	_reposition_village_center()
+	_refresh_village_influence()
+	_reset_population_to_start()
+	_update_seed_display()
+
+
+func _reset_selection_and_build_mode() -> void:
+	hex_grid.set("build_mode", false)
+	hex_grid.emit_signal("build_mode_changed", false)
+	hex_grid.call("clear_selected_building")
+	hex_grid.call("_clear_selection")
+	info_panel.visible = false
+
+
+func _reset_runtime_controllers() -> void:
+	var farm_controller: Node = get_parent().get_node_or_null("FarmController")
+	if farm_controller != null:
+		farm_controller.set("farm_tiles", Array([], TYPE_OBJECT, "MeshInstance3D", null))
+		farm_controller.set("farmer_count", 0)
+		farm_controller.set("production_timer", 0.0)
+		farm_controller.set("farm_selected", false)
+	var storage_controller: Node = get_parent().get_node_or_null("StorageController")
+	if storage_controller != null:
+		storage_controller.set("warehouse_count", 0)
+		storage_controller.set("warehouse_selected", false)
+		storage_controller.call("_recalculate_storage_capacity")
+
+
+func _clear_all_buildings() -> void:
+	for tile_value in tiles_by_coords.values():
+		var tile: MeshInstance3D = tile_value as MeshInstance3D
+		if tile == null:
+			continue
+		_remove_building_children(tile)
+		tile.set_meta("has_building", false)
+		tile.set_meta("building_name", "")
+		tile.set_meta("building_type", "")
+		tile.set_meta("workplace_count", 0)
+		tile.set_meta("job_type", "")
+		tile.set_meta("assigned_workers", 0)
+		tile.set_meta("assigned_resident_id", 0)
+		_remove_optional_meta(tile, "resident_capacity")
+		_remove_optional_meta(tile, "current_residents")
+		_remove_optional_meta(tile, "own_forest")
+		_remove_optional_meta(tile, "adjacent_forests")
+		_remove_optional_meta(tile, "lumberjack_production")
+		_remove_optional_meta(tile, "own_stone")
+		_remove_optional_meta(tile, "adjacent_stones")
+		_remove_optional_meta(tile, "stone_mine_production")
+		_remove_optional_meta(tile, "food_production")
+		_remove_optional_meta(tile, "storage_wood")
+		_remove_optional_meta(tile, "storage_stone")
+		_remove_optional_meta(tile, "storage_food")
+		_remove_optional_meta(tile, "nearest_village_center_coords")
+
+
+func _remove_building_children(tile: MeshInstance3D) -> void:
+	var children: Array[Node] = []
+	for child in tile.get_children():
+		var child_node: Node = child as Node
+		if child_node == null:
+			continue
+		if child_node.name == "ClickBody" or child_node.name == "InfluenceMarker":
+			continue
+		children.append(child_node)
+	for child_node in children:
+		_remove_child_immediately(tile, child_node)
+
+
+func _reset_hex_grid_runtime_state() -> void:
+	hex_grid.set("lumberjack_hut_tiles", Array([], TYPE_OBJECT, "MeshInstance3D", null))
+	hex_grid.set("stone_mine_tiles", Array([], TYPE_OBJECT, "MeshInstance3D", null))
+	hex_grid.set("berry_gatherer_tiles", Array([], TYPE_OBJECT, "MeshInstance3D", null))
+	hex_grid.set("production_timer", 0.0)
+	hex_grid.set("food_consumption_timer", 0.0)
+	hex_grid.set("wood", int(hex_grid.get("starting_wood")))
+	hex_grid.set("stone", int(hex_grid.get("starting_stone")))
+	hex_grid.set("food", int(hex_grid.get("starting_food")))
+	hex_grid.set("residents", Array([], TYPE_DICTIONARY, "", null))
+	hex_grid.set("lumberjack_count", 0)
+	hex_grid.set("miner_count", 0)
+	hex_grid.set("berry_gatherer_count", 0)
+	hex_grid.set("workplace_count", 0)
+	hex_grid.set("assigned_workplace_count", 0)
+	hex_grid.set("free_workplace_count", 0)
+	hex_grid.set("unemployed_count", 0)
+	hex_grid.emit_signal("wood_changed", int(hex_grid.get("wood")))
+	hex_grid.emit_signal("stone_changed", int(hex_grid.get("stone")))
+	hex_grid.emit_signal("food_changed", int(hex_grid.get("food")))
+	hex_grid.emit_signal("work_changed", 0, 0, 0, 0, 0)
+
+
+func _reset_population_to_start() -> void:
+	hex_grid.call("_recalculate_housing_capacity")
+	hex_grid.call("_set_population", int(hex_grid.get("starting_population")))
 
 
 func _generate_clustered_world() -> void:
@@ -138,7 +269,7 @@ func _clear_existing_village_center() -> void:
 			tile.set_meta("job_type", "")
 			tile.set_meta("assigned_workers", 0)
 			tile.set_meta("assigned_resident_id", 0)
-			tile.remove_meta("resident_capacity")
+			_remove_optional_meta(tile, "resident_capacity")
 
 
 func _find_best_village_center_tile() -> MeshInstance3D:
@@ -208,6 +339,25 @@ func _refresh_village_influence() -> void:
 		var influence_marker: Node = tile.get_node_or_null("InfluenceMarker")
 		_remove_child_immediately(tile, influence_marker)
 	hex_grid.call("_update_village_center_influence")
+
+
+func _update_seed_display() -> void:
+	if not settlement_window.visible:
+		return
+	if settlement_content_label.text.is_empty():
+		return
+	var lines: PackedStringArray = settlement_content_label.text.split("\n")
+	var seed_text: String = "Seed: %d" % int(hex_grid.get("generation_seed"))
+	if lines.size() > 0 and lines[0].begins_with("Seed:"):
+		lines[0] = seed_text
+	else:
+		lines.insert(0, seed_text)
+	settlement_content_label.text = "\n".join(lines)
+
+
+func _remove_optional_meta(tile: MeshInstance3D, meta_name: String) -> void:
+	if tile.has_meta(meta_name):
+		tile.remove_meta(meta_name)
 
 
 func _remove_child_immediately(parent_node: Node, child_node: Node) -> void:
