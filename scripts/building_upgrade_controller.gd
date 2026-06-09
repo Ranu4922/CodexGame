@@ -29,8 +29,38 @@ func _create_upgrade_button() -> void:
 	upgrade_button.text = "Upgrade"
 	upgrade_button.visible = false
 	upgrade_button.custom_minimum_size = Vector2(140.0, 34.0)
+	upgrade_button.z_index = 100
 	upgrade_button.pressed.connect(_on_upgrade_button_pressed)
+	_apply_upgrade_button_style()
 	canvas_layer.add_child(upgrade_button)
+
+
+func _apply_upgrade_button_style() -> void:
+	var normal_style: StyleBoxFlat = StyleBoxFlat.new()
+	normal_style.bg_color = Color(0.22, 0.48, 0.24, 0.95)
+	normal_style.border_color = Color(0.65, 0.95, 0.62, 1.0)
+	normal_style.border_width_left = 1
+	normal_style.border_width_top = 1
+	normal_style.border_width_right = 1
+	normal_style.border_width_bottom = 1
+	normal_style.corner_radius_top_left = 4
+	normal_style.corner_radius_top_right = 4
+	normal_style.corner_radius_bottom_left = 4
+	normal_style.corner_radius_bottom_right = 4
+
+	var hover_style: StyleBoxFlat = normal_style.duplicate() as StyleBoxFlat
+	hover_style.bg_color = Color(0.28, 0.60, 0.30, 0.98)
+
+	var disabled_style: StyleBoxFlat = normal_style.duplicate() as StyleBoxFlat
+	disabled_style.bg_color = Color(0.22, 0.22, 0.22, 0.90)
+	disabled_style.border_color = Color(0.45, 0.45, 0.45, 1.0)
+
+	upgrade_button.add_theme_stylebox_override("normal", normal_style)
+	upgrade_button.add_theme_stylebox_override("hover", hover_style)
+	upgrade_button.add_theme_stylebox_override("pressed", hover_style)
+	upgrade_button.add_theme_stylebox_override("disabled", disabled_style)
+	upgrade_button.add_theme_color_override("font_color", Color.WHITE)
+	upgrade_button.add_theme_color_override("font_disabled_color", Color(0.65, 0.65, 0.65))
 
 
 func _on_hex_selected(
@@ -60,6 +90,7 @@ func _update_upgrade_ui_deferred() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_update_upgrade_info_text()
+	await get_tree().process_frame
 	_update_upgrade_button()
 
 
@@ -75,6 +106,8 @@ func _update_upgrade_info_text() -> void:
 	lines.append("Stufe: %d" % level)
 	if can_upgrade_lumberjack_hut(selected_tile):
 		lines.append("Upgradekosten: %d Holz, %d Stein" % [lumberjack_upgrade_wood_cost, lumberjack_upgrade_stone_cost])
+		lines.append("")
+		lines.append("")
 	info_label.text = "\n".join(lines)
 	if get_parent().has_method("_set_info_panel_text"):
 		get_parent().call("_set_info_panel_text", info_label.text)
@@ -89,9 +122,19 @@ func _update_upgrade_button() -> void:
 		return
 	upgrade_button.visible = true
 	upgrade_button.disabled = not _has_upgrade_resources()
-	var panel_position: Vector2 = info_panel.position
+	upgrade_button.size = Vector2(140.0, 34.0)
+	var panel_position: Vector2 = info_panel.global_position
 	var panel_size: Vector2 = info_panel.size
-	upgrade_button.position = Vector2(panel_position.x + 12.0, panel_position.y + panel_size.y + 8.0)
+	var button_size: Vector2 = upgrade_button.size
+	var button_x: float = panel_position.x + 12.0
+	var button_y: float = panel_position.y + panel_size.y - button_size.y - 12.0
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	if button_y + button_size.y > viewport_size.y - 12.0:
+		button_y = viewport_size.y - button_size.y - 12.0
+	if button_y < panel_position.y + 12.0:
+		button_y = panel_position.y + 12.0
+	upgrade_button.global_position = Vector2(button_x, button_y)
+	upgrade_button.move_to_front()
 
 
 func _on_selection_cleared() -> void:
