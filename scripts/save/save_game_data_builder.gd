@@ -29,5 +29,7 @@ static func create_building_save_data(tiles_by_coords: Dictionary) -> Array[Dict
 		building_data["name"] = String(tile.get_meta("building_name", ""))
 		building_data["tile_type"] = String(tile.get_meta("tile_type", ""))
 		building_data["assigned_resident_id"] = int(tile.get_meta("assigned_resident_id", 0))
+		if tile.has_meta("building_level"):
+			building_data["building_level"] = int(tile.get_meta("building_level"))
 		buildings.append(building_data)
 	return buildings
