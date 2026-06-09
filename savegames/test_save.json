@@ -1,0 +1,25 @@
+{
+	"version": 1,
+	"seed": 12345,
+	"resources": {
+		"wood": 20,
+		"stone": 0,
+		"food": 0
+	},
+	"population": {
+		"residents": 2,
+		"resident_data": [],
+		"housing_capacity": 2,
+		"free_housing": 0
+	},
+	"settlement": {
+		"name": "Dorfzentrum",
+		"village_center": {},
+		"influence_radius": 3,
+		"housing_capacity": 2,
+		"workplaces": 0,
+		"assigned_workplaces": 0,
+		"free_workplaces": 0
+	},
+	"buildings": []
+}
