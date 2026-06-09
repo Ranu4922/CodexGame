@@ -58,9 +58,13 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT:
-			_try_place_warehouse_under_mouse()
-			get_viewport().set_input_as_handled()
+		if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		var hovered_control: Control = get_viewport().gui_get_hovered_control()
+		if hovered_control != null:
+			return
+		_try_place_warehouse_under_mouse()
+		get_viewport().set_input_as_handled()
 
 
 func _on_warehouse_button_pressed() -> void:
