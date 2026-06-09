@@ -117,7 +117,7 @@ func _update_settlement_window_display() -> void:
 		return
 	var lines: PackedStringArray = settlement_content_label.text.split("\n")
 	var farmer_count: int = int(farm_controller.get("farmer_count"))
-	var farmer_line_inserted: bool = false
+	var farmer_line_exists: bool = false
 	var total_workplaces: int = int(farm_controller.call("get_total_workplaces"))
 	var assigned_workplaces: int = int(farm_controller.call("get_assigned_workplaces"))
 	var free_workplaces: int = int(farm_controller.call("get_free_workplaces"))
@@ -127,13 +127,19 @@ func _update_settlement_window_display() -> void:
 	var food_cycle_amount: int = _calculate_production_from_tiles(hex_grid.get("berry_gatherer_tiles") as Array, "food_production") + int(farm_controller.call("get_farm_food_production_per_cycle"))
 	var food_rate: String = _format_rate(food_cycle_amount)
 
+	for line_text in lines:
+		if line_text.begins_with("Bauer:"):
+			farmer_line_exists = true
+
 	for line_index in range(lines.size()):
 		var line_text: String = lines[line_index]
 		if line_text.begins_with("Arbeitslos:"):
 			lines[line_index] = "Arbeitslos: %d" % adjusted_unemployed
-		if line_text.begins_with("Sammler:") and not farmer_line_inserted:
+		if line_text.begins_with("Bauer:"):
+			lines[line_index] = "Bauer: %d" % farmer_count
+		if line_text.begins_with("Sammler:") and not farmer_line_exists:
 			lines.insert(line_index + 1, "Bauer: %d" % farmer_count)
-			farmer_line_inserted = true
+			farmer_line_exists = true
 		if line_text.begins_with("Gesamt:"):
 			lines[line_index] = "Gesamt: %d" % total_workplaces
 		if line_text.begins_with("Belegt:"):
