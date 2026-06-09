@@ -601,11 +601,19 @@ func _is_building_currently_producing(building_name: String, assigned_workers: i
 
 
 func _get_production_text(building_name: String, wood_production: int, stone_production: int, food_production: int) -> String:
-	return BuildingInfoFormatter.get_cycle_production_text(building_name, wood_production, stone_production, food_production)
+	var production_interval: float = float(hex_grid.get("production_interval"))
+	if building_name == "Holzfällerhütte":
+		return BuildingInfoFormatter.format_rate_production_text(wood_production, "Holz", production_interval)
+	if building_name == "Steinmine":
+		return BuildingInfoFormatter.format_rate_production_text(stone_production, "Stein", production_interval)
+	if building_name == "Beerensammler" or building_name == "Bauernhof":
+		return BuildingInfoFormatter.format_rate_production_text(food_production, "Nahrung", production_interval)
+	return "Produktion: +0,0/s"
 
 
 func _format_building_production_text(amount: int, resource_name: String) -> String:
-	return BuildingInfoFormatter.format_cycle_production_text(amount, resource_name)
+	var production_interval: float = float(hex_grid.get("production_interval"))
+	return BuildingInfoFormatter.format_rate_production_text(amount, resource_name, production_interval)
 
 
 func _on_message_changed(text: String) -> void:
