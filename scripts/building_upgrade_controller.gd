@@ -19,6 +19,10 @@ func _ready() -> void:
 	hex_grid.selection_cleared.connect(_on_selection_cleared)
 
 
+func _process(_delta: float) -> void:
+	_clear_upgrade_meta_from_empty_tiles()
+
+
 func _create_upgrade_button() -> void:
 	upgrade_button = Button.new()
 	upgrade_button.name = "UpgradeButton"
@@ -149,6 +153,18 @@ func get_lumberjack_level(tile: MeshInstance3D) -> int:
 func _apply_lumberjack_level(tile: MeshInstance3D, level: int) -> void:
 	tile.set_meta("building_level", level)
 	tile.set_meta("lumberjack_production", level)
+
+
+func _clear_upgrade_meta_from_empty_tiles() -> void:
+	var tiles_by_coords: Dictionary = hex_grid.get("tiles_by_coords") as Dictionary
+	for tile_value in tiles_by_coords.values():
+		var tile: MeshInstance3D = tile_value as MeshInstance3D
+		if tile == null:
+			continue
+		if bool(tile.get_meta("has_building", false)):
+			continue
+		if tile.has_meta("building_level"):
+			tile.remove_meta("building_level")
 
 
 func _is_lumberjack_hut(tile: MeshInstance3D) -> bool:
