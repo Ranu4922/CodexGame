@@ -54,75 +54,86 @@ light_energy = 2.0
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
+[node name="TopHudPanel" type="Panel" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1600.0
+offset_bottom = 52.0
+
 [node name="ResourceLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 440.0
-offset_bottom = 48.0
+offset_right = 180.0
+offset_bottom = 44.0
 text = "Holz: 20 / 50"
 
 [node name="StoneLabel" type="Label" parent="CanvasLayer"]
-offset_left = 16.0
-offset_top = 44.0
-offset_right = 440.0
-offset_bottom = 76.0
+offset_left = 190.0
+offset_top = 16.0
+offset_right = 350.0
+offset_bottom = 44.0
 text = "Stein: 0 / 50"
 
 [node name="FoodLabel" type="Label" parent="CanvasLayer"]
-offset_left = 16.0
-offset_top = 72.0
-offset_right = 440.0
-offset_bottom = 104.0
+offset_left = 360.0
+offset_top = 16.0
+offset_right = 540.0
+offset_bottom = 44.0
 text = "Nahrung: 0 / 50"
 
 [node name="PopulationLabel" type="Label" parent="CanvasLayer"]
-offset_left = 16.0
-offset_top = 100.0
-offset_right = 440.0
-offset_bottom = 132.0
+offset_left = 550.0
+offset_top = 16.0
+offset_right = 790.0
+offset_bottom = 44.0
 text = "Bewohner: 2 / Wohnraum 2"
 
 [node name="UnemployedLabel" type="Label" parent="CanvasLayer"]
-offset_left = 16.0
-offset_top = 128.0
-offset_right = 440.0
-offset_bottom = 160.0
+offset_left = 800.0
+offset_top = 16.0
+offset_right = 960.0
+offset_bottom = 44.0
 text = "Arbeitslos: 2"
 
 [node name="BuildModeLabel" type="Label" parent="CanvasLayer"]
+visible = false
 offset_left = 16.0
-offset_top = 156.0
-offset_right = 440.0
-offset_bottom = 188.0
+offset_top = 56.0
+offset_right = 220.0
+offset_bottom = 84.0
 text = "Baumodus: AUS"
 
 [node name="SelectedBuildingLabel" type="Label" parent="CanvasLayer"]
 visible = false
 offset_left = 16.0
-offset_top = 184.0
+offset_top = 84.0
 offset_right = 440.0
-offset_bottom = 216.0
+offset_bottom = 112.0
 text = "Ausgewähltes Gebäude: -"
 
 [node name="MessageLabel" type="Label" parent="CanvasLayer"]
 offset_left = 16.0
-offset_top = 212.0
+offset_top = 58.0
 offset_right = 760.0
-offset_bottom = 244.0
+offset_bottom = 90.0
 text = ""
 
 [node name="BuildMenu" type="PanelContainer" parent="CanvasLayer"]
 visible = false
 offset_left = 16.0
-offset_top = 246.0
+offset_top = 96.0
 offset_right = 360.0
-offset_bottom = 490.0
+offset_bottom = 382.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/BuildMenu"]
 offset_left = 7.0
 offset_top = 7.0
 offset_right = 337.0
-offset_bottom = 237.0
+offset_bottom = 279.0
+
+[node name="BuildMenuTitleLabel" type="Label" parent="CanvasLayer/BuildMenu/VBoxContainer"]
+layout_mode = 2
+text = "Baumodus: AN"
 
 [node name="LumberjackButton" type="Button" parent="CanvasLayer/BuildMenu/VBoxContainer"]
 layout_mode = 2
@@ -178,10 +189,21 @@ script = ExtResource("5_growth_info_script")
 [node name="InfoPanel" type="PanelContainer" parent="CanvasLayer"]
 visible = false
 offset_left = 16.0
-offset_top = 452.0
+offset_top = 730.0
 offset_right = 16.0
-offset_bottom = 452.0
+offset_bottom = 730.0
 
 [node name="InfoLabel" type="Label" parent="CanvasLayer/InfoPanel"]
+layout_mode = 2
+text = ""
+
+[node name="BuildingDetailPanel" type="PanelContainer" parent="CanvasLayer"]
+visible = false
+offset_left = 1220.0
+offset_top = 610.0
+offset_right = 1220.0
+offset_bottom = 610.0
+
+[node name="BuildingDetailLabel" type="Label" parent="CanvasLayer/BuildingDetailPanel"]
 layout_mode = 2
 text = ""
