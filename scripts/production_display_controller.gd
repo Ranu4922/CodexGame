@@ -6,7 +6,7 @@ const HudTextFormatter = preload("res://scripts/ui/hud_text_formatter.gd")
 @onready var game_world: Node = get_parent()
 @onready var hex_grid: Node = get_parent().get_node("HexGrid")
 @onready var farm_controller: Node = get_parent().get_node("FarmController")
-@onready var info_label: Label = get_parent().get_node("CanvasLayer/InfoPanel/InfoLabel")
+@onready var building_detail_label: Label = get_parent().get_node("CanvasLayer/BuildingDetailPanel/BuildingDetailLabel")
 @onready var settlement_window: PanelContainer = get_parent().get_node("CanvasLayer/SettlementWindow")
 @onready var settlement_content_label: Label = get_parent().get_node("CanvasLayer/SettlementWindow/VBoxContainer/ContentLabel")
 @onready var unemployed_label: Label = get_parent().get_node("CanvasLayer/UnemployedLabel")
@@ -22,70 +22,30 @@ func _process(_delta: float) -> void:
 
 
 func _on_hex_selected(
-	q: int,
-	r: int,
-	tile_type: String,
-	buildable: bool,
-	has_building: bool,
+	_q: int,
+	_r: int,
+	_tile_type: String,
+	_buildable: bool,
+	_has_building: bool,
 	building_name: String,
-	assigned_workers: int,
-	assigned_job: String,
-	own_forest: bool,
-	adjacent_forests: int,
+	_assigned_workers: int,
+	_assigned_job: String,
+	_own_forest: bool,
+	_adjacent_forests: int,
 	wood_production: int,
 	food_production: int,
-	own_stone: bool,
-	adjacent_stones: int,
+	_own_stone: bool,
+	_adjacent_stones: int,
 	stone_production: int,
-	in_settlement_area: bool,
-	village_center_distance: int
+	_in_settlement_area: bool,
+	_village_center_distance: int
 ) -> void:
 	await get_tree().process_frame
-	if building_name == "Bauernhof":
-		_show_farm_info(q, r, tile_type, buildable, has_building, building_name, assigned_workers, assigned_job, food_production, in_settlement_area, village_center_distance)
-		return
-	_update_info_panel_production_line(building_name, wood_production, stone_production, food_production)
+	_update_building_detail_production_line(building_name, wood_production, stone_production, food_production)
 
 
-func _show_farm_info(
-	q: int,
-	r: int,
-	tile_type: String,
-	buildable: bool,
-	has_building: bool,
-	building_name: String,
-	assigned_workers: int,
-	assigned_job: String,
-	food_production: int,
-	in_settlement_area: bool,
-	village_center_distance: int
-) -> void:
-	if not has_building:
-		return
-	var buildable_text: String = "ja" if buildable else "nein"
-	var settlement_text: String = "Ja" if in_settlement_area else "Nein"
-	var workplace_status: String = "belegt" if assigned_workers > 0 else "unbesetzt"
-	var produces_currently_text: String = "ja" if assigned_workers > 0 and food_production > 0 else "nein"
-	var job_text: String = assigned_job if not assigned_job.is_empty() else "Bauer"
-	var displayed_food_production: int = food_production if assigned_workers > 0 else 0
-	var lines: PackedStringArray = PackedStringArray([
-		"Koordinaten: q=%d, r=%d" % [q, r],
-		"Tile-Typ: %s" % tile_type,
-		"Bebaubar: %s" % buildable_text,
-		"Gebäude: %s" % building_name,
-		"Im Siedlungsgebiet: %s" % settlement_text,
-		"Entfernung zum Dorfzentrum: %d" % village_center_distance,
-		"Arbeitsplätze: 1",
-		"Arbeitsplatz: %s" % workplace_status,
-		"Zugewiesener Job: %s" % job_text,
-		"Produziert aktuell: %s" % produces_currently_text,
-		"Produktion: +%s Nahrung/s" % _format_rate(displayed_food_production),
-	])
-	game_world.call("_set_info_panel_text", "\n".join(lines))
-
-
-func _update_info_panel_production_line(building_name: String, wood_production: int, stone_production: int, food_production: int) -> void:
-	if info_label.text.is_empty():
+func _update_building_detail_production_line(building_name: String, wood_production: int, stone_production: int, food_production: int) -> void:
+	if building_detail_label.text.is_empty():
 		return
 	var resource_name: String = ""
 	var production_amount: int = 0
@@ -95,17 +55,19 @@ func _update_info_panel_production_line(building_name: String, wood_production: 
 	if building_name == "Steinmine":
 		resource_name = "Stein"
 		production_amount = stone_production
-	if building_name == "Beerensammler":
+	if building_name == "Beerensammler" or building_name == "Bauernhof":
 		resource_name = "Nahrung"
 		production_amount = food_production
 	if resource_name.is_empty():
 		return
-	var lines: PackedStringArray = info_label.text.split("\n")
+	var lines: PackedStringArray = building_detail_label.text.split("\n")
 	for line_index in range(lines.size()):
 		var line_text: String = lines[line_index]
 		if line_text.begins_with("Produktion:"):
 			lines[line_index] = "Produktion: +%s %s/s" % [_format_rate(production_amount), resource_name]
-	info_label.text = "\n".join(lines)
+	building_detail_label.text = "\n".join(lines)
+	if game_world.has_method("_set_building_detail_panel_text"):
+		game_world.call("_set_building_detail_panel_text", building_detail_label.text)
 
 
 func _update_unemployed_label() -> void:
