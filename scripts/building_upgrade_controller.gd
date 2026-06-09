@@ -6,8 +6,8 @@ extends Node
 
 @onready var hex_grid: Node = get_parent().get_node("HexGrid")
 @onready var canvas_layer: CanvasLayer = get_parent().get_node("CanvasLayer")
-@onready var info_panel: PanelContainer = get_parent().get_node("CanvasLayer/InfoPanel")
-@onready var info_label: Label = get_parent().get_node("CanvasLayer/InfoPanel/InfoLabel")
+@onready var building_detail_panel: PanelContainer = get_parent().get_node("CanvasLayer/BuildingDetailPanel")
+@onready var building_detail_label: Label = get_parent().get_node("CanvasLayer/BuildingDetailPanel/BuildingDetailLabel")
 
 var upgrade_button: Button
 var selected_tile: MeshInstance3D
@@ -99,18 +99,18 @@ func _update_upgrade_info_text() -> void:
 		return
 	if not _is_lumberjack_hut(selected_tile):
 		return
-	if info_label.text.is_empty():
+	if building_detail_label.text.is_empty():
 		return
 	var level: int = get_lumberjack_level(selected_tile)
-	var lines: PackedStringArray = info_label.text.split("\n")
+	var lines: PackedStringArray = building_detail_label.text.split("\n")
 	lines.append("Stufe: %d" % level)
 	if can_upgrade_lumberjack_hut(selected_tile):
 		lines.append("Upgradekosten: %d Holz, %d Stein" % [lumberjack_upgrade_wood_cost, lumberjack_upgrade_stone_cost])
 		lines.append("")
 		lines.append("")
-	info_label.text = "\n".join(lines)
-	if get_parent().has_method("_set_info_panel_text"):
-		get_parent().call("_set_info_panel_text", info_label.text)
+	building_detail_label.text = "\n".join(lines)
+	if get_parent().has_method("_set_building_detail_panel_text"):
+		get_parent().call("_set_building_detail_panel_text", building_detail_label.text)
 
 
 func _update_upgrade_button() -> void:
@@ -120,19 +120,17 @@ func _update_upgrade_button() -> void:
 	if not can_upgrade_lumberjack_hut(selected_tile):
 		upgrade_button.visible = false
 		return
+	if not building_detail_panel.visible:
+		upgrade_button.visible = false
+		return
 	upgrade_button.visible = true
 	upgrade_button.disabled = not _has_upgrade_resources()
 	upgrade_button.size = Vector2(140.0, 34.0)
-	var panel_position: Vector2 = info_panel.global_position
-	var panel_size: Vector2 = info_panel.size
+	var panel_position: Vector2 = building_detail_panel.global_position
+	var panel_size: Vector2 = building_detail_panel.size
 	var button_size: Vector2 = upgrade_button.size
-	var button_x: float = panel_position.x + 12.0
-	var button_y: float = panel_position.y + panel_size.y - button_size.y - 12.0
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	if button_y + button_size.y > viewport_size.y - 12.0:
-		button_y = viewport_size.y - button_size.y - 12.0
-	if button_y < panel_position.y + 12.0:
-		button_y = panel_position.y + 12.0
+	var button_x: float = panel_position.x + 14.0
+	var button_y: float = panel_position.y + panel_size.y - button_size.y - 14.0
 	upgrade_button.global_position = Vector2(button_x, button_y)
 	upgrade_button.move_to_front()
 
