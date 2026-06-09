@@ -1,5 +1,7 @@
 extends Node
 
+const SaveGameDataBuilder = preload("res://scripts/save/save_game_data_builder.gd")
+
 const SAVE_PATH: String = "res://savegames/test_save.json"
 const SAVE_DIR: String = "res://savegames"
 
@@ -76,28 +78,20 @@ func _create_resource_save_data() -> Dictionary:
 
 
 func _create_population_save_data() -> Dictionary:
+	var resident_list: Array = hex_grid.get("residents") as Array
 	return {
 		"residents": int(hex_grid.get("population")),
-		"resident_data": _copy_resident_data(),
+		"resident_data": SaveGameDataBuilder.copy_resident_data(resident_list),
 		"housing_capacity": int(hex_grid.get("housing_capacity")),
 		"free_housing": int(hex_grid.get("free_housing")),
 	}
-
-
-func _copy_resident_data() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	var resident_list: Array = hex_grid.get("residents") as Array
-	for resident_value in resident_list:
-		var resident_data: Dictionary = resident_value as Dictionary
-		result.append(resident_data.duplicate(true))
-	return result
 
 
 func _create_settlement_save_data() -> Dictionary:
 	var village_center_data: Dictionary = {}
 	var village_center_tile: MeshInstance3D = hex_grid.get("village_center_tile") as MeshInstance3D
 	if village_center_tile != null:
-		village_center_data = _create_tile_coords_data(village_center_tile)
+		village_center_data = SaveGameDataBuilder.create_tile_coords_data(village_center_tile)
 	return {
 		"name": "Dorfzentrum",
 		"village_center": village_center_data,
@@ -110,28 +104,8 @@ func _create_settlement_save_data() -> Dictionary:
 
 
 func _create_building_save_data() -> Array[Dictionary]:
-	var buildings: Array[Dictionary] = []
 	var tiles_by_coords: Dictionary = hex_grid.get("tiles_by_coords") as Dictionary
-	for tile_value in tiles_by_coords.values():
-		var tile: MeshInstance3D = tile_value as MeshInstance3D
-		if tile == null:
-			continue
-		if not bool(tile.get_meta("has_building")):
-			continue
-		var building_data: Dictionary = _create_tile_coords_data(tile)
-		building_data["type"] = String(tile.get_meta("building_type", ""))
-		building_data["name"] = String(tile.get_meta("building_name", ""))
-		building_data["tile_type"] = String(tile.get_meta("tile_type", ""))
-		building_data["assigned_resident_id"] = int(tile.get_meta("assigned_resident_id", 0))
-		buildings.append(building_data)
-	return buildings
-
-
-func _create_tile_coords_data(tile: MeshInstance3D) -> Dictionary:
-	return {
-		"q": int(tile.get_meta("q")),
-		"r": int(tile.get_meta("r")),
-	}
+	return SaveGameDataBuilder.create_building_save_data(tiles_by_coords)
 
 
 func _apply_save_data(save_data: Dictionary) -> void:
