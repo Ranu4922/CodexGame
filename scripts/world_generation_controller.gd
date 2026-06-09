@@ -130,8 +130,7 @@ func _clear_existing_village_center() -> void:
 			continue
 		if String(tile.get_meta("building_type", "")) == "village_center":
 			var marker: Node = tile.get_node_or_null("Dorfzentrum")
-			if marker != null:
-				marker.queue_free()
+			_remove_child_immediately(tile, marker)
 			tile.set_meta("has_building", false)
 			tile.set_meta("building_name", "")
 			tile.set_meta("building_type", "")
@@ -207,9 +206,16 @@ func _refresh_village_influence() -> void:
 		tile.set_meta("in_settlement_area", false)
 		tile.set_meta("village_center_distance", -1)
 		var influence_marker: Node = tile.get_node_or_null("InfluenceMarker")
-		if influence_marker != null:
-			influence_marker.queue_free()
+		_remove_child_immediately(tile, influence_marker)
 	hex_grid.call("_update_village_center_influence")
+
+
+func _remove_child_immediately(parent_node: Node, child_node: Node) -> void:
+	if child_node == null:
+		return
+	if child_node.get_parent() == parent_node:
+		parent_node.remove_child(child_node)
+	child_node.queue_free()
 
 
 func _set_tile_type(tile: MeshInstance3D, tile_type: String) -> void:
