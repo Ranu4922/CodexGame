@@ -251,11 +251,11 @@ Gameplay-Schleife:
 * Unterschiedliche Biome
 * Ressourcen abhängig vom Biom
 
-Jedes Hex-Feld besitzt genau ein Hauptelement:
+Ein Hex-Feld steht primär für ein Gebiet oder einen Bezirk.
 
-* Gelände
-* Ressource
-* Gebäude
+Visuell kann ein Hex mehrere Objekte enthalten, zum Beispiel Häuser, Bäume, Wege oder Dekorationen.
+
+Für die Spielverwaltung besitzt ein Hex weiterhin einen primären Gebietstyp oder Gebäudetyp.
 
 ---
 
@@ -297,6 +297,27 @@ Bedürfnisse:
 * Bezahlung
 
 Unzufriedene Bewohner können die Siedlung verlassen.
+
+---
+
+## Wohngebiete
+
+Jede Siedlung besitzt genau ein Dorfzentrum oder Stadtzentrum.
+
+Wohnhäuser und Wohngebiete müssen direkt angrenzen an:
+
+* das Dorfzentrum
+* oder ein bestehendes Wohnhaus oder Wohngebiet derselben Siedlung
+
+Dadurch entstehen zusammenhängende Wohnviertel.
+
+Isolierte Wohnhäuser sind nicht erlaubt.
+
+Neue entfernte Wohngebiete sind erst möglich, wenn dort später ein Außenposten oder neues Stadtzentrum gegründet wird.
+
+Produktionsgebäude wie Holzfällerhütte, Steinmine, Bauernhof, Beerensammler und Lagerhaus folgen weiterhin ihren eigenen Platzierungsregeln.
+
+Diese Gebäude müssen nicht an Wohnhäuser angrenzen.
 
 ---
 
