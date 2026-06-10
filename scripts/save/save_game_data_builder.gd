@@ -30,7 +30,19 @@ static func create_building_save_data(tiles_by_coords: Dictionary) -> Array[Dict
 		building_data["name"] = String(tile.get_meta("building_name", ""))
 		building_data["tile_type"] = String(tile.get_meta("tile_type", ""))
 		building_data["assigned_resident_id"] = int(tile.get_meta("assigned_resident_id", 0))
-		if building_type == "lumberjack_hut" and tile.has_meta("building_level"):
+		if _is_upgradeable_building_type(building_type) and tile.has_meta("building_level"):
 			building_data["building_level"] = int(tile.get_meta("building_level"))
 		buildings.append(building_data)
 	return buildings
+
+
+static func _is_upgradeable_building_type(building_type: String) -> bool:
+	if building_type == "lumberjack_hut":
+		return true
+	if building_type == "stone_mine":
+		return true
+	if building_type == "berry_gatherer":
+		return true
+	if building_type == "farm":
+		return true
+	return false
