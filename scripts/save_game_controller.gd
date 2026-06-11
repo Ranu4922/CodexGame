@@ -123,6 +123,15 @@ func _apply_save_data(save_data: Dictionary) -> void:
 	_apply_saved_resources(save_data)
 	_refresh_selection_after_load()
 	_refresh_settlement_window_after_load()
+	_sync_parent_world_data()
+
+
+func _sync_parent_world_data() -> void:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return
+	if parent_node.has_method("sync_world_data"):
+		parent_node.call("sync_world_data")
 
 
 func _clear_runtime_building_state() -> void:

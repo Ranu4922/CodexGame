@@ -76,6 +76,7 @@ var building_detail_right_margin: float = 20.0
 var building_detail_bottom_margin: float = 20.0
 var settlement_window_width: float = 300.0
 var settlement_window_padding: float = 14.0
+var world_data: RefCounted
 
 
 func _ready() -> void:
@@ -119,6 +120,7 @@ func _ready() -> void:
 	)
 	_on_selection_cleared()
 	_update_settlement_window()
+	sync_world_data()
 
 
 func _input(event: InputEvent) -> void:
@@ -142,6 +144,20 @@ func _input(event: InputEvent) -> void:
 
 func activate_management_view() -> void:
 	management_camera.current = true
+	sync_world_data()
+
+
+func set_world_data(shared_world_data: RefCounted) -> void:
+	world_data = shared_world_data
+	sync_world_data()
+
+
+func sync_world_data() -> void:
+	if world_data == null:
+		return
+	if not world_data.has_method("sync_from_hex_grid"):
+		return
+	world_data.call("sync_from_hex_grid", hex_grid)
 
 
 func _on_hex_selected(

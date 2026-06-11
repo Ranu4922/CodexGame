@@ -15,12 +15,17 @@ signal settlement_management_requested
 
 var target_position: Vector3 = Vector3.ZERO
 var has_move_target: bool = false
+var world_data: RefCounted
 
 
 func _ready() -> void:
 	target_position = player.global_position
 	_configure_hint_label()
 	hint_label.visible = false
+
+
+func set_world_data(shared_world_data: RefCounted) -> void:
+	world_data = shared_world_data
 
 
 func set_active(active: bool) -> void:

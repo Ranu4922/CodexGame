@@ -153,6 +153,15 @@ func _place_warehouse(tile: MeshInstance3D) -> void:
 	hex_grid.emit_signal("message_changed", "Lagerhaus gebaut: -20 Holz, -10 Stein.")
 	hex_grid.call("_set_selected_tile", tile)
 	hex_grid.call("_emit_hex_selected", tile)
+	_sync_parent_world_data()
+
+
+func _sync_parent_world_data() -> void:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return
+	if parent_node.has_method("sync_world_data"):
+		parent_node.call("sync_world_data")
 
 
 func _recalculate_storage_capacity() -> void:

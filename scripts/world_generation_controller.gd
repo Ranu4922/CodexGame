@@ -37,6 +37,7 @@ func _run_world_generation() -> void:
 	_generate_clustered_world()
 	_reposition_village_center()
 	_refresh_village_influence()
+	_sync_parent_world_data()
 
 
 func _regenerate_with_random_seed() -> void:
@@ -62,6 +63,7 @@ func _regenerate_current_world() -> void:
 	_refresh_village_influence()
 	_reset_population_to_start()
 	_update_seed_display()
+	_sync_parent_world_data()
 
 
 func _reset_selection_and_build_mode() -> void:
@@ -332,6 +334,7 @@ func _place_village_center_on_tile(tile: MeshInstance3D) -> void:
 	tile.set_meta("resident_capacity", 2)
 	hex_grid.set("village_center_tile", tile)
 	hex_grid.call("_recalculate_housing_capacity")
+	_sync_parent_world_data()
 
 
 func _refresh_village_influence() -> void:
@@ -447,3 +450,11 @@ func _make_material(color: Color) -> StandardMaterial3D:
 	material.albedo_color = color
 	material.roughness = 0.8
 	return material
+
+
+func _sync_parent_world_data() -> void:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return
+	if parent_node.has_method("sync_world_data"):
+		parent_node.call("sync_world_data")

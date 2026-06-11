@@ -141,6 +141,15 @@ func _place_farm(tile: MeshInstance3D) -> void:
 	hex_grid.emit_signal("message_changed", "Bauernhof gebaut: -15 Holz, -5 Stein.")
 	hex_grid.call("_set_selected_tile", tile)
 	hex_grid.call("_emit_hex_selected", tile)
+	_sync_parent_world_data()
+
+
+func _sync_parent_world_data() -> void:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return
+	if parent_node.has_method("sync_world_data"):
+		parent_node.call("sync_world_data")
 
 
 func _update_production_timer(delta: float) -> void:

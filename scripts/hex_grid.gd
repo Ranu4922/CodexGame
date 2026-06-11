@@ -568,6 +568,7 @@ func _place_lumberjack_hut(tile: MeshInstance3D) -> void:
 	tile.set_meta("lumberjack_production", _get_building_production("lumberjack_hut"))
 	lumberjack_hut_tiles.append(tile)
 	_update_work_assignments()
+	_sync_parent_world_data()
 
 
 func _place_house(tile: MeshInstance3D) -> void:
@@ -585,6 +586,7 @@ func _place_house(tile: MeshInstance3D) -> void:
 	tile.set_meta("resident_capacity", _get_building_housing("house"))
 	tile.set_meta("current_residents", 0)
 	_recalculate_housing_capacity()
+	_sync_parent_world_data()
 
 
 func _place_stone_mine(tile: MeshInstance3D) -> void:
@@ -604,6 +606,7 @@ func _place_stone_mine(tile: MeshInstance3D) -> void:
 	tile.set_meta("stone_mine_production", _get_building_production("stone_mine"))
 	stone_mine_tiles.append(tile)
 	_update_work_assignments()
+	_sync_parent_world_data()
 
 
 func _place_berry_gatherer(tile: MeshInstance3D) -> void:
@@ -623,6 +626,7 @@ func _place_berry_gatherer(tile: MeshInstance3D) -> void:
 	tile.set_meta("food_production", _get_building_production("berry_gatherer"))
 	berry_gatherer_tiles.append(tile)
 	_update_work_assignments()
+	_sync_parent_world_data()
 
 
 func _add_wood(amount: int) -> void:
@@ -918,6 +922,14 @@ func _get_nearest_village_center_coords() -> Vector2i:
 	if village_center_tile == null:
 		return Vector2i.ZERO
 	return Vector2i(int(village_center_tile.get_meta("q")), int(village_center_tile.get_meta("r")))
+
+
+func _sync_parent_world_data() -> void:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return
+	if parent_node.has_method("sync_world_data"):
+		parent_node.call("sync_world_data")
 
 
 func _hex_distance(from_q: int, from_r: int, to_q: int, to_r: int) -> int:
