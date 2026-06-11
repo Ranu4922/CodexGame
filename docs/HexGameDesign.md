@@ -36,8 +36,21 @@ Mit begrenzten Vorräten sucht die Gruppe nach einem Ort, an dem eine neue Heima
 
 Dort beginnt der Aufbau der ersten Siedlung.
 
----
+### Langfristiges Startdesign
 
+Das Dorfzentrum wird später nicht automatisch fest gesetzt.
+
+Der Spieler startet mit wenigen Überlebenden und Startressourcen.
+
+Der Spieler erkundet die Umgebung.
+
+Der Spieler wählt selbst den Standort der ersten Siedlung.
+
+Erst wenn das Dorfzentrum platziert wurde, entsteht das Siedlungsgebiet.
+
+Für den aktuellen MVP darf das Dorfzentrum weiterhin automatisch gesetzt werden.
+
+---
 
 ## Spielercharakter
 
