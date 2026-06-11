@@ -4,6 +4,7 @@ signal settlement_management_requested
 
 @export var move_speed: float = 6.0
 @export var interaction_distance: float = 2.4
+@export var interaction_hint_height: float = 1.8
 
 @onready var player: Node3D = $Player
 @onready var camera_rig: Node3D = $CameraRig
@@ -17,6 +18,7 @@ var has_move_target: bool = false
 
 func _ready() -> void:
 	target_position = player.global_position
+	_configure_hint_label()
 	hint_label.visible = false
 
 
@@ -94,7 +96,17 @@ func _update_camera() -> void:
 
 
 func _update_interaction_hint() -> void:
-	hint_label.visible = _is_near_village_center()
+	var should_show_hint: bool = _is_near_village_center()
+	hint_label.visible = should_show_hint
+	if not should_show_hint:
+		return
+	var hint_world_position: Vector3 = village_center.global_position + Vector3.UP * interaction_hint_height
+	if camera.is_position_behind(hint_world_position):
+		hint_label.visible = false
+		return
+	var hint_screen_position: Vector2 = camera.unproject_position(hint_world_position)
+	var hint_size: Vector2 = hint_label.size
+	hint_label.position = hint_screen_position - hint_size * 0.5
 
 
 func _is_near_village_center() -> bool:
@@ -103,3 +115,21 @@ func _is_near_village_center() -> bool:
 	player_position.y = 0.0
 	center_position.y = 0.0
 	return player_position.distance_to(center_position) <= interaction_distance
+
+
+func _configure_hint_label() -> void:
+	hint_label.text = "[E]"
+	hint_label.size = Vector2(52.0, 34.0)
+	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hint_label.add_theme_font_size_override("font_size", 22)
+	hint_label.add_theme_color_override("font_color", Color(1.0, 0.94, 0.62, 1.0))
+	var label_style: StyleBoxFlat = StyleBoxFlat.new()
+	label_style.bg_color = Color(0.04, 0.04, 0.04, 0.76)
+	label_style.border_color = Color(1.0, 0.82, 0.26, 0.9)
+	label_style.set_border_width_all(1)
+	label_style.corner_radius_top_left = 4
+	label_style.corner_radius_top_right = 4
+	label_style.corner_radius_bottom_left = 4
+	label_style.corner_radius_bottom_right = 4
+	hint_label.add_theme_stylebox_override("normal", label_style)

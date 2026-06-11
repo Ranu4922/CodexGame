@@ -67,9 +67,8 @@ light_energy = 2.0
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="HintLabel" type="Label" parent="CanvasLayer"]
-offset_left = 640.0
-offset_top = 820.0
-offset_right = 960.0
-offset_bottom = 852.0
-text = "E: Dorf verwalten"
+offset_right = 52.0
+offset_bottom = 34.0
+text = "[E]"
 horizontal_alignment = 1
+vertical_alignment = 1
