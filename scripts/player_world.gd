@@ -5,8 +5,10 @@ signal settlement_management_requested
 @export var move_speed: float = 4.5
 @export var interaction_distance: float = 2.7
 @export var interaction_hint_height: float = 2.1
+@export var world_hex_size: float = 1.35
 
 @onready var player: Node3D = $Player
+@onready var world_map: Node3D = $WorldMap
 @onready var camera_rig: Node3D = $CameraRig
 @onready var camera: Camera3D = $CameraRig/Camera3D
 @onready var village_center: Node3D = $VillageCenter
@@ -16,16 +18,20 @@ signal settlement_management_requested
 var target_position: Vector3 = Vector3.ZERO
 var has_move_target: bool = false
 var world_data: RefCounted
+var tile_materials: Dictionary = {}
+var marker_materials: Dictionary = {}
 
 
 func _ready() -> void:
 	target_position = player.global_position
+	_create_world_materials()
 	_configure_hint_label()
 	hint_label.visible = false
 
 
 func set_world_data(shared_world_data: RefCounted) -> void:
 	world_data = shared_world_data
+	refresh_world_visuals()
 
 
 func set_active(active: bool) -> void:
@@ -35,6 +41,7 @@ func set_active(active: bool) -> void:
 	set_process_input(active)
 	set_process_unhandled_input(active)
 	if active:
+		refresh_world_visuals()
 		_update_camera()
 		camera.current = true
 		_update_interaction_hint()
@@ -110,6 +117,155 @@ func _stop_movement() -> void:
 
 func _update_camera() -> void:
 	camera_rig.global_position = player.global_position
+
+
+func refresh_world_visuals() -> void:
+	if world_data == null:
+		return
+	_clear_world_map()
+	_create_world_tiles()
+	_create_world_building_markers()
+	_update_village_center_from_world_data()
+
+
+func _clear_world_map() -> void:
+	for child in world_map.get_children():
+		var child_node: Node = child as Node
+		if child_node == null:
+			continue
+		world_map.remove_child(child_node)
+		child_node.queue_free()
+
+
+func _create_world_tiles() -> void:
+	var tiles: Dictionary = world_data.get("tiles_by_coords") as Dictionary
+	for tile_value in tiles.values():
+		if not (tile_value is Dictionary):
+			continue
+		var tile_data: Dictionary = tile_value as Dictionary
+		var q: int = int(tile_data.get("q", 0))
+		var r: int = int(tile_data.get("r", 0))
+		var tile_type: String = String(tile_data.get("tile_type", "Gras"))
+		var tile_position: Vector3 = _axial_to_player_world(q, r)
+		_create_tile_visual(tile_position, tile_type)
+		if tile_type == "Wald":
+			_create_tree_placeholder(tile_position)
+		if tile_type == "Stein":
+			_create_stone_placeholder(tile_position)
+
+
+func _create_world_building_markers() -> void:
+	var buildings: Dictionary = world_data.get("buildings_by_coords") as Dictionary
+	for building_value in buildings.values():
+		if not (building_value is Dictionary):
+			continue
+		var building_data: Dictionary = building_value as Dictionary
+		var building_type: String = String(building_data.get("type", ""))
+		if building_type == "village_center":
+			continue
+		var q: int = int(building_data.get("q", 0))
+		var r: int = int(building_data.get("r", 0))
+		var building_position: Vector3 = _axial_to_player_world(q, r)
+		_create_building_placeholder(building_position, building_type)
+
+
+func _create_tile_visual(tile_position: Vector3, tile_type: String) -> void:
+	var tile: MeshInstance3D = MeshInstance3D.new()
+	tile.name = "WorldTile_%s" % tile_type
+	var mesh: BoxMesh = BoxMesh.new()
+	mesh.size = Vector3(world_hex_size * 1.45, 0.04, world_hex_size * 1.25)
+	tile.mesh = mesh
+	tile.position = Vector3(tile_position.x, 0.02, tile_position.z)
+	tile.material_override = _get_tile_material(tile_type)
+	world_map.add_child(tile)
+
+
+func _create_tree_placeholder(tile_position: Vector3) -> void:
+	var trunk: MeshInstance3D = MeshInstance3D.new()
+	trunk.name = "TreePlaceholder"
+	var trunk_mesh: BoxMesh = BoxMesh.new()
+	trunk_mesh.size = Vector3(0.18, 0.55, 0.18)
+	trunk.mesh = trunk_mesh
+	trunk.position = Vector3(tile_position.x, 0.32, tile_position.z)
+	trunk.material_override = marker_materials["tree_trunk"]
+	world_map.add_child(trunk)
+
+	var crown: MeshInstance3D = MeshInstance3D.new()
+	crown.name = "TreeCrownPlaceholder"
+	var crown_mesh: BoxMesh = BoxMesh.new()
+	crown_mesh.size = Vector3(0.62, 0.62, 0.62)
+	crown.mesh = crown_mesh
+	crown.position = Vector3(tile_position.x, 0.85, tile_position.z)
+	crown.material_override = marker_materials["tree_crown"]
+	world_map.add_child(crown)
+
+
+func _create_stone_placeholder(tile_position: Vector3) -> void:
+	var stone_marker: MeshInstance3D = MeshInstance3D.new()
+	stone_marker.name = "StonePlaceholder"
+	var stone_mesh: BoxMesh = BoxMesh.new()
+	stone_mesh.size = Vector3(0.58, 0.38, 0.46)
+	stone_marker.mesh = stone_mesh
+	stone_marker.position = Vector3(tile_position.x, 0.25, tile_position.z)
+	stone_marker.material_override = marker_materials["stone_marker"]
+	world_map.add_child(stone_marker)
+
+
+func _create_building_placeholder(tile_position: Vector3, building_type: String) -> void:
+	var marker: MeshInstance3D = MeshInstance3D.new()
+	marker.name = "BuildingPlaceholder_%s" % building_type
+	var marker_mesh: BoxMesh = BoxMesh.new()
+	marker_mesh.size = Vector3(0.72, 0.72, 0.72)
+	marker.mesh = marker_mesh
+	marker.position = Vector3(tile_position.x, 0.42, tile_position.z)
+	marker.material_override = marker_materials["building_marker"]
+	world_map.add_child(marker)
+
+
+func _update_village_center_from_world_data() -> void:
+	var has_center: bool = bool(world_data.get("has_village_center"))
+	if not has_center:
+		return
+	var center_coords_value: Variant = world_data.get("village_center_coords")
+	if not (center_coords_value is Vector2i):
+		return
+	var center_coords: Vector2i = center_coords_value as Vector2i
+	var center_position: Vector3 = _axial_to_player_world(center_coords.x, center_coords.y)
+	village_center.global_position = Vector3(center_position.x, 0.75, center_position.z)
+
+
+func _axial_to_player_world(q: int, r: int) -> Vector3:
+	var x_position: float = world_hex_size * sqrt(3.0) * (float(q) + float(r) * 0.5)
+	var z_position: float = world_hex_size * 1.5 * float(r)
+	return Vector3(x_position, 0.0, z_position)
+
+
+func _create_world_materials() -> void:
+	tile_materials = {
+		"Gras": _make_material(Color(0.22, 0.52, 0.28)),
+		"Wald": _make_material(Color(0.09, 0.34, 0.17)),
+		"Wasser": _make_material(Color(0.10, 0.34, 0.76)),
+		"Stein": _make_material(Color(0.45, 0.46, 0.43)),
+	}
+	marker_materials = {
+		"tree_trunk": _make_material(Color(0.34, 0.20, 0.10)),
+		"tree_crown": _make_material(Color(0.07, 0.42, 0.18)),
+		"stone_marker": _make_material(Color(0.58, 0.59, 0.56)),
+		"building_marker": _make_material(Color(0.77, 0.54, 0.24)),
+	}
+
+
+func _get_tile_material(tile_type: String) -> StandardMaterial3D:
+	if tile_materials.has(tile_type):
+		return tile_materials[tile_type] as StandardMaterial3D
+	return tile_materials["Gras"] as StandardMaterial3D
+
+
+func _make_material(color: Color) -> StandardMaterial3D:
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.85
+	return material
 
 
 func _update_interaction_hint() -> void:
