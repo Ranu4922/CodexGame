@@ -52,6 +52,52 @@ Der Spieler kann:
 * Neue Siedlungen gründen
 * Außenposten errichten
 
+## Siedlungsverwaltung
+
+Siedlungen werden über das jeweilige Dorfzentrum verwaltet.
+
+Der Spieler muss sich zum Dorfzentrum einer Siedlung begeben und mit diesem interagieren.
+
+### Dorfzentrum
+
+Das Dorfzentrum dient als Verwaltungsgebäude der Siedlung.
+
+Beim Interagieren öffnet sich die Verwaltungsoberfläche.
+
+Angezeigt werden unter anderem:
+
+* Bewohnerzahl
+* Freie Bewohner
+* Nahrung
+* Ressourcen
+* Lagerbestand
+* Verteidigung
+* Gebäudeübersicht
+
+### Bauen
+
+Neue Bezirke und Gebäude werden über das Dorfzentrum geplant.
+
+Der Spieler wählt dort die gewünschte Bauoption aus.
+
+Anschließend wechselt das Spiel in eine strategische Planungsansicht der aktuellen Siedlung.
+
+Dort können neue Bezirke platziert und bestehende Bezirke verbessert werden.
+
+### Mehrere Siedlungen
+
+Jede Siedlung besitzt ihr eigenes Dorfzentrum.
+
+Um eine Siedlung zu verwalten, muss der Spieler das entsprechende Dorfzentrum aufsuchen.
+
+Dadurch fühlen sich Siedlungen als echte Orte innerhalb der Spielwelt an.
+
+### Ziel
+
+Der Spieler bleibt aktiv Teil der Welt und verwaltet seine Siedlungen nicht über ein globales Menü.
+
+Das Dorfzentrum bildet das Herz jeder Siedlung.
+
 ### Aufgaben der Bewohner
 
 Bewohner übernehmen die alltägliche Arbeit innerhalb der Siedlungen.
