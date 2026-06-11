@@ -10,6 +10,7 @@ signal settlement_management_requested
 @onready var camera_rig: Node3D = $CameraRig
 @onready var camera: Camera3D = $CameraRig/Camera3D
 @onready var village_center: Node3D = $VillageCenter
+@onready var player_world_canvas_layer: CanvasLayer = $CanvasLayer
 @onready var hint_label: Label = $CanvasLayer/HintLabel
 
 var target_position: Vector3 = Vector3.ZERO
@@ -24,14 +25,17 @@ func _ready() -> void:
 
 func set_active(active: bool) -> void:
 	visible = active
+	player_world_canvas_layer.visible = active
 	set_process(active)
 	set_process_input(active)
 	set_process_unhandled_input(active)
 	if active:
 		_update_camera()
 		camera.current = true
+		_update_interaction_hint()
 	else:
 		_stop_movement()
+		hint_label.visible = false
 
 
 func _process(delta: float) -> void:
