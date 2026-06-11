@@ -2,9 +2,9 @@ extends Node3D
 
 signal settlement_management_requested
 
-@export var move_speed: float = 6.0
-@export var interaction_distance: float = 2.4
-@export var interaction_hint_height: float = 1.8
+@export var move_speed: float = 4.5
+@export var interaction_distance: float = 2.7
+@export var interaction_hint_height: float = 2.1
 
 @onready var player: Node3D = $Player
 @onready var camera_rig: Node3D = $CameraRig
@@ -28,7 +28,10 @@ func set_active(active: bool) -> void:
 	set_process_input(active)
 	set_process_unhandled_input(active)
 	if active:
+		_update_camera()
 		camera.current = true
+	else:
+		_stop_movement()
 
 
 func _process(delta: float) -> void:
@@ -89,6 +92,11 @@ func _update_player_movement(delta: float) -> void:
 	if step_distance > distance:
 		step_distance = distance
 	player.global_position = current_position + direction.normalized() * step_distance
+
+
+func _stop_movement() -> void:
+	target_position = player.global_position
+	has_move_target = false
 
 
 func _update_camera() -> void:
