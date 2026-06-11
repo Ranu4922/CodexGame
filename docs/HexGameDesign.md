@@ -78,6 +78,18 @@ Siedlungen werden über das jeweilige Dorfzentrum verwaltet.
 
 Der Spieler muss sich zum Dorfzentrum einer Siedlung begeben und mit diesem interagieren.
 
+### Dorfverwaltung
+
+Der Spieler baut nicht jederzeit frei über ein globales Baumenü.
+
+Der Spieler muss später mit dem Dorfzentrum interagieren.
+
+Dadurch öffnet sich die Dorfverwaltungsansicht.
+
+Dort werden Ressourcen, Bewohner, Gebäude, Upgrades und Bauplanung verwaltet.
+
+Die normale Weltansicht bleibt für Bewegung, Erkundung, Kampf und Interaktion.
+
 ### Dorfzentrum
 
 Das Dorfzentrum dient als Verwaltungsgebäude der Siedlung.

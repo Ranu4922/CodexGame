@@ -1,5 +1,10 @@
 extends Node3D
 
+# MVP note:
+# This script currently drives the hex-based settlement management view.
+# The long-term GameWorld will be the normal player world and open this view
+# after interaction with a village center.
+
 const BuildingInfoFormatter = preload("res://scripts/ui/building_info_formatter.gd")
 const HudTextFormatter = preload("res://scripts/ui/hud_text_formatter.gd")
 const ProductionCalculator = preload("res://scripts/systems/production_calculator.gd")

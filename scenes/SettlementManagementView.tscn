@@ -1,0 +1,5 @@
+[gd_scene load_steps=2 format=3 uid="uid://dm4ec95mcgu6b"]
+
+[ext_resource type="PackedScene" path="res://scenes/GameWorld.tscn" id="1_gameworld"]
+
+[node name="SettlementManagementView" instance=ExtResource("1_gameworld")]

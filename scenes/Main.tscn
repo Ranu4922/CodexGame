@@ -1,9 +1,9 @@
 [gd_scene load_steps=3 format=3 uid="uid://d2mvphexmain"]
 
-[ext_resource type="PackedScene" path="res://scenes/GameWorld.tscn" id="1_gameworld"]
+[ext_resource type="PackedScene" path="res://scenes/SettlementManagementView.tscn" id="1_settlement_management_view"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main_script"]
 
 [node name="Main" type="Node"]
 script = ExtResource("2_main_script")
 
-[node name="GameWorld" parent="." instance=ExtResource("1_gameworld")]
+[node name="SettlementManagementView" parent="." instance=ExtResource("1_settlement_management_view")]
