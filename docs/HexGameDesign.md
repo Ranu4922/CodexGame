@@ -24,6 +24,8 @@ Gleichzeitig tauchten gefährliche Kreaturen auf und große Teile der Wildnis wu
 
 Die wenigen Überlebenden verloren den Kontakt zueinander und gründeten kleine Lager, Dörfer und Siedlungen.
 
+---
+
 ### Spielstart
 
 Der Spieler führt eine kleine Gruppe von Überlebenden an.
@@ -33,6 +35,9 @@ Zu Beginn bestehen diese aus dem Spielercharakter und wenigen Bewohnern.
 Mit begrenzten Vorräten sucht die Gruppe nach einem Ort, an dem eine neue Heimat entstehen kann.
 
 Dort beginnt der Aufbau der ersten Siedlung.
+
+---
+
 
 ## Spielercharakter
 
@@ -51,6 +56,8 @@ Der Spieler kann:
 * Mit anderen Siedlungen handeln
 * Neue Siedlungen gründen
 * Außenposten errichten
+
+---
 
 ## Siedlungsverwaltung
 
@@ -92,11 +99,27 @@ Um eine Siedlung zu verwalten, muss der Spieler das entsprechende Dorfzentrum au
 
 Dadurch fühlen sich Siedlungen als echte Orte innerhalb der Spielwelt an.
 
+---
+
 ### Ziel
 
 Der Spieler bleibt aktiv Teil der Welt und verwaltet seine Siedlungen nicht über ein globales Menü.
 
 Das Dorfzentrum bildet das Herz jeder Siedlung.
+
+Der Spieler entwickelt sich vom Anführer einer kleinen Gruppe von Überlebenden zum Herrscher eines Netzwerks aus Siedlungen, Handelsrouten und Außenposten.
+
+-
+
+### Langfristiges Ziel
+
+Das Ziel des Spielers ist nicht nur das Überleben.
+
+Aus einer kleinen Gruppe von Überlebenden soll erneut eine blühende Zivilisation entstehen.
+
+Durch Erkundung, Besiedlung, Handel und Verteidigung wird die verlorene Welt Schritt für Schritt zurückerobert.
+
+---
 
 ### Aufgaben der Bewohner
 
@@ -112,6 +135,8 @@ Dazu gehören:
 
 Der Spieler muss diese Arbeiten nicht selbst ausführen.
 
+---
+
 ### Nahrung
 
 Es existieren zwei getrennte Nahrungssysteme.
@@ -126,10 +151,7 @@ Bewohner verbrauchen Nahrung aus dem Lager ihrer Siedlung.
 
 Nahrungsmangel kann zu Unzufriedenheit, verringerter Produktivität, Abwanderung oder langfristig zum Tod von Bewohnern führen.
 
-### Ziel
-
-Der Spieler entwickelt sich vom Anführer einer kleinen Gruppe von Überlebenden zum Herrscher eines Netzwerks aus Siedlungen, Handelsrouten und Außenposten.
-
+---
 
 ## Welt
 
@@ -165,12 +187,15 @@ Hex-Felder dienen hauptsächlich der Verwaltung, dem Bau und strategischen Entsc
 
 Der Spieler bewegt sich frei innerhalb der Welt und ist nicht auf die Bewegung von Hex zu Hex beschränkt.
 
+---
 
 ## Monsternester
 
 Monster entstehen aus Monsternestern, die in der Welt verteilt sind.
 
 Monsternester stellen eine dauerhafte Bedrohung dar und beeinflussen die Sicherheit der umliegenden Region.
+
+---
 
 ### Bedrohungsgebiet
 
@@ -184,6 +209,8 @@ Dadurch entsteht ein strategischer Konflikt zwischen:
 
 * sicheren Standorten
 * ressourcenreichen Standorten
+
+---
 
 ### Nest-Stufen
 
@@ -216,6 +243,8 @@ Monsternester besitzen unterschiedliche Entwicklungsstufen.
 * Erzeugt besonders starke Monsterwellen
 * Stellt eine regionale Großgefahr dar
 
+---
+
 ### Entwicklung
 
 Monsternester entwickeln sich mit der Zeit weiter.
@@ -223,6 +252,8 @@ Monsternester entwickeln sich mit der Zeit weiter.
 Werden sie ignoriert, können sie aufsteigen und gefährlicher werden.
 
 Frühzeitiges Eingreifen kann spätere Probleme verhindern.
+
+---
 
 ### Regionale Unterschiede
 
@@ -232,6 +263,8 @@ Gefährliche Gebiete können bereits zu Spielbeginn starke Nester enthalten.
 
 Dadurch entstehen natürliche Hochrisikogebiete, die oft wertvolle Ressourcen enthalten.
 
+---
+
 ### Monsterwellen
 
 Die allgemeine Monsteraktivität der Welt wird teilweise durch aktive Monsternester beeinflusst.
@@ -240,7 +273,7 @@ Je mehr starke Nester existieren, desto größer ist die Wahrscheinlichkeit für
 
 Das Zerstören von Nestern erhöht langfristig die Sicherheit der Welt.
 
-
+---
 
 ### Monster
 
@@ -249,14 +282,6 @@ Seit dem Fall ist die Wildnis gefährlich.
 In der Welt existieren verschiedene Monster und Kreaturen, die Menschen, Händler, Außenposten und Siedlungen bedrohen können.
 
 Große Teile der Welt gelten noch immer als ungesichert.
-
-### Langfristiges Ziel
-
-Das Ziel des Spielers ist nicht nur das Überleben.
-
-Aus einer kleinen Gruppe von Überlebenden soll erneut eine blühende Zivilisation entstehen.
-
-Durch Erkundung, Besiedlung, Handel und Verteidigung wird die verlorene Welt Schritt für Schritt zurückerobert.
 
 ---
 
