@@ -101,6 +101,22 @@ Dadurch fühlen sich Siedlungen als echte Orte innerhalb der Spielwelt an.
 
 ---
 
+Langfristiges Design:
+Das Dorfzentrum wird nicht automatisch dauerhaft gesetzt.
+Der Spieler wählt den Standort der ersten Siedlung selbst.
+
+Ablauf:
+- Spieler startet mit wenigen Überlebenden und Startressourcen.
+- Spieler erkundet die Umgebung.
+- Spieler platziert das erste Dorfzentrum an einem geeigneten Ort.
+- Erst danach entsteht das Siedlungsgebiet.
+- Bauen von Wohnhäusern und Produktionsgebäuden ist an dieses Dorfzentrum gebunden.
+
+Für den aktuellen MVP darf das Dorfzentrum weiterhin automatisch gesetzt werden.
+Später wird daraus eine manuelle Platzierung.
+
+---
+
 ### Ziel
 
 Der Spieler bleibt aktiv Teil der Welt und verwaltet seine Siedlungen nicht über ein globales Menü.
