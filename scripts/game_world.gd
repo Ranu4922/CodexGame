@@ -1,5 +1,7 @@
 extends Node3D
 
+signal management_exit_requested
+
 # MVP note:
 # This script currently drives the hex-based settlement management view.
 # The long-term GameWorld will be the normal player world and open this view
@@ -33,6 +35,7 @@ const SettlementWindowFormatter = preload("res://scripts/ui/settlement_window_fo
 @onready var stone_mine_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/StoneMineButton
 @onready var berry_gatherer_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/BerryGathererButton
 @onready var warehouse_button: Button = $CanvasLayer/BuildMenu/VBoxContainer/WarehouseButton
+@onready var management_camera: Camera3D = $CameraRig/Camera3D
 
 var message_version: int = 0
 var selected_building_name: String = "-"
@@ -131,6 +134,14 @@ func _input(event: InputEvent) -> void:
 		if key_event.keycode == KEY_ESCAPE and settlement_window.visible:
 			settlement_window.visible = false
 			get_viewport().set_input_as_handled()
+			return
+		if key_event.keycode == KEY_ESCAPE:
+			management_exit_requested.emit()
+			get_viewport().set_input_as_handled()
+
+
+func activate_management_view() -> void:
+	management_camera.current = true
 
 
 func _on_hex_selected(
