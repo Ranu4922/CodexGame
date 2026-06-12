@@ -18,10 +18,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not key_event.pressed or key_event.echo:
 			return
 		if key_event.keycode == KEY_F5:
-			save_game()
+			hex_grid.emit_signal("message_changed", "Speichern per Hotkey ist deaktiviert")
 			get_viewport().set_input_as_handled()
 		if key_event.keycode == KEY_F9:
-			load_game()
+			hex_grid.emit_signal("message_changed", "Laden nur im Startmenü")
 			get_viewport().set_input_as_handled()
 
 
@@ -38,23 +38,28 @@ func save_game() -> void:
 	hex_grid.emit_signal("message_changed", "Spiel gespeichert")
 
 
-func load_game() -> void:
+func has_save_game() -> bool:
+	return FileAccess.file_exists(SAVE_PATH)
+
+
+func load_game() -> bool:
 	if not FileAccess.file_exists(SAVE_PATH):
 		hex_grid.emit_signal("message_changed", "Kein Savegame gefunden")
-		return
+		return false
 	var save_file: FileAccess = FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if save_file == null:
 		hex_grid.emit_signal("message_changed", "Laden fehlgeschlagen")
-		return
+		return false
 	var json_text: String = save_file.get_as_text()
 	save_file.close()
 	var parsed_data: Variant = JSON.parse_string(json_text)
 	if not (parsed_data is Dictionary):
 		hex_grid.emit_signal("message_changed", "Savegame ist ungueltig")
-		return
+		return false
 	var save_data: Dictionary = parsed_data as Dictionary
 	_apply_save_data(save_data)
 	hex_grid.emit_signal("message_changed", "Spiel geladen")
+	return true
 
 
 func _create_save_data() -> Dictionary:

@@ -1,0 +1,70 @@
+[gd_scene load_steps=3 format=3 uid="uid://cxjqqswc5x7ho"]
+
+[ext_resource type="Script" path="res://scripts/start_menu.gd" id="1_start_menu_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.04, 0.04, 0.04, 0.86)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 18.0
+content_margin_top = 18.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+
+[node name="StartMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_start_menu_script")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 560.0
+offset_top = 210.0
+offset_right = 1040.0
+offset_bottom = 510.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Hex Survival"
+horizontal_alignment = 1
+
+[node name="SeedLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Seed"
+
+[node name="SeedInput" type="LineEdit" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Leer lassen für zufälligen Seed"
+
+[node name="GenerateSeedButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Seed generieren"
+
+[node name="StartGameButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Spiel starten"
+
+[node name="LoadGameButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Spielstand laden"
+
+[node name="QuitButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Beenden"
+
+[node name="MessageLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2

@@ -25,7 +25,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event: InputEventKey = event as InputEventKey
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_N:
-			_regenerate_with_random_seed()
+			hex_grid.emit_signal("message_changed", "Neuer Seed nur im Startmenü")
 			get_viewport().set_input_as_handled()
 
 
