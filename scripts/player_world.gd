@@ -176,7 +176,7 @@ func _create_tile_visual(tile_position: Vector3, tile_type: String) -> void:
 	var tile: MeshInstance3D = MeshInstance3D.new()
 	tile.name = "WorldTile_%s" % tile_type
 	tile.mesh = _create_hex_tile_mesh()
-	tile.position = Vector3(tile_position.x, 0.02, tile_position.z)
+	tile.position = Vector3(tile_position.x, 0.0, tile_position.z)
 	tile.material_override = _get_tile_material(tile_type)
 	world_map.add_child(tile)
 
@@ -276,18 +276,31 @@ func _create_stone_placeholders(tile_position: Vector3) -> void:
 
 
 func _create_hex_tile_mesh() -> ArrayMesh:
+	var tile_height: float = 0.12
 	var vertices: PackedVector3Array = PackedVector3Array()
 	var normals: PackedVector3Array = PackedVector3Array()
 	var indices: PackedInt32Array = PackedInt32Array()
-	vertices.append(Vector3.ZERO)
+
+	vertices.append(Vector3(0.0, tile_height, 0.0))
 	normals.append(Vector3.UP)
 	for corner_index in range(6):
 		var angle_degrees: float = 60.0 * float(corner_index) + 30.0
 		var angle_radians: float = deg_to_rad(angle_degrees)
 		var x_position: float = cos(angle_radians) * world_hex_size
 		var z_position: float = sin(angle_radians) * world_hex_size
-		vertices.append(Vector3(x_position, 0.0, z_position))
+		vertices.append(Vector3(x_position, tile_height, z_position))
 		normals.append(Vector3.UP)
+	var bottom_center_index: int = vertices.size()
+	vertices.append(Vector3.ZERO)
+	normals.append(Vector3.DOWN)
+	for corner_index in range(6):
+		var angle_degrees: float = 60.0 * float(corner_index) + 30.0
+		var angle_radians: float = deg_to_rad(angle_degrees)
+		var x_position: float = cos(angle_radians) * world_hex_size
+		var z_position: float = sin(angle_radians) * world_hex_size
+		vertices.append(Vector3(x_position, 0.0, z_position))
+		normals.append(Vector3.DOWN)
+
 	for triangle_index in range(6):
 		var first_corner_index: int = triangle_index + 1
 		var second_corner_index: int = 1
@@ -296,6 +309,30 @@ func _create_hex_tile_mesh() -> ArrayMesh:
 		indices.append(0)
 		indices.append(second_corner_index)
 		indices.append(first_corner_index)
+
+	for triangle_index in range(6):
+		var first_corner_index: int = bottom_center_index + triangle_index + 1
+		var second_corner_index: int = bottom_center_index + 1
+		if triangle_index < 5:
+			second_corner_index = bottom_center_index + triangle_index + 2
+		indices.append(bottom_center_index)
+		indices.append(first_corner_index)
+		indices.append(second_corner_index)
+
+	for side_index in range(6):
+		var next_side_index: int = 0
+		if side_index < 5:
+			next_side_index = side_index + 1
+		var top_a: int = side_index + 1
+		var top_b: int = next_side_index + 1
+		var bottom_a: int = bottom_center_index + side_index + 1
+		var bottom_b: int = bottom_center_index + next_side_index + 1
+		indices.append(top_a)
+		indices.append(bottom_b)
+		indices.append(bottom_a)
+		indices.append(top_a)
+		indices.append(top_b)
+		indices.append(bottom_b)
 
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -332,6 +369,8 @@ func _get_tile_material(tile_type: String) -> StandardMaterial3D:
 func _make_material(color: Color) -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = color
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material.roughness = 0.85
 	return material
 
