@@ -21,6 +21,7 @@ const SettlementWindowFormatter = preload("res://scripts/ui/settlement_window_fo
 @onready var unemployed_label: Label = $CanvasLayer/UnemployedLabel
 @onready var selected_building_label: Label = $CanvasLayer/SelectedBuildingLabel
 @onready var message_label: Label = $CanvasLayer/MessageLabel
+@onready var management_canvas_layer: CanvasLayer = $CanvasLayer
 @onready var top_hud_panel: Panel = $CanvasLayer/TopHudPanel
 @onready var settlement_window: PanelContainer = $CanvasLayer/SettlementWindow
 @onready var settlement_title_label: Label = $CanvasLayer/SettlementWindow/VBoxContainer/TitleLabel
@@ -142,7 +143,29 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func reset_settlement_ui_state() -> void:
+	settlement_window.visible = false
+	build_menu.visible = false
+	build_mode_label.visible = false
+	selected_building_label.visible = false
+	message_version += 1
+	message_label.text = ""
+	hex_grid.set("build_mode", false)
+	hex_grid.emit_signal("build_mode_changed", false)
+	hex_grid.call("clear_selected_building")
+	hex_grid.call("_clear_selection")
+	hex_grid.set("show_influence_area", false)
+	hex_grid.call("_set_influence_markers_visible", false)
+	_on_selection_cleared()
+	_hide_building_detail_panel()
+	var upgrade_controller: Node = get_node_or_null("BuildingUpgradeController")
+	if upgrade_controller != null and upgrade_controller.has_method("reset_upgrade_ui"):
+		upgrade_controller.call("reset_upgrade_ui")
+	management_canvas_layer.visible = false
+
+
 func activate_management_view() -> void:
+	management_canvas_layer.visible = true
 	management_camera.current = true
 	sync_world_data()
 

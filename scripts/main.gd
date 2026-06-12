@@ -15,6 +15,7 @@ func _ready() -> void:
 	print("Hex Survival MVP gestartet")
 	player_world.call("set_world_data", world_data)
 	settlement_management_view.call("set_world_data", world_data)
+	settlement_management_view.call("reset_settlement_ui_state")
 	player_world.call("refresh_world_visuals")
 	player_world.call("set_active", true)
 	settlement_management_view.visible = false
@@ -32,6 +33,7 @@ func _open_settlement_management_view() -> void:
 
 
 func _open_player_world() -> void:
+	settlement_management_view.call("reset_settlement_ui_state")
 	settlement_management_view.call("sync_world_data")
 	player_world.call("refresh_world_visuals")
 	settlement_management_view.visible = false

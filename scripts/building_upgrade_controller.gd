@@ -141,6 +141,11 @@ func _on_selection_cleared() -> void:
 	upgrade_button.visible = false
 
 
+func reset_upgrade_ui() -> void:
+	selected_tile = null
+	upgrade_button.visible = false
+
+
 func _on_upgrade_button_pressed() -> void:
 	if selected_tile == null:
 		return
