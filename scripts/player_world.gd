@@ -2,10 +2,10 @@ extends Node3D
 
 signal settlement_management_requested
 
-@export var move_speed: float = 4.5
-@export var interaction_distance: float = 2.7
-@export var interaction_hint_height: float = 2.1
-@export var world_hex_size: float = 4.0
+@export var move_speed: float = 8.0
+@export var interaction_distance: float = 6.0
+@export var interaction_hint_height: float = 3.0
+@export var world_hex_size: float = 8.0
 
 @onready var player: Node3D = $Player
 @onready var world_map: Node3D = $WorldMap
@@ -72,6 +72,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _try_set_move_target() -> void:
+	# Water blocking will be added later; for now water is only marked visually.
 	var ray_result: Dictionary = _get_mouse_ray_result()
 	if ray_result.is_empty():
 		return
@@ -151,9 +152,9 @@ func _create_world_tiles() -> void:
 		var tile_position: Vector3 = _axial_to_player_world(q, r)
 		_create_tile_visual(tile_position, tile_type)
 		if tile_type == "Wald":
-			_create_tree_placeholder(tile_position)
+			_create_forest_placeholders(tile_position)
 		if tile_type == "Stein":
-			_create_stone_placeholder(tile_position)
+			_create_stone_placeholders(tile_position)
 
 
 func _create_world_building_markers() -> void:
@@ -184,18 +185,18 @@ func _create_tree_placeholder(tile_position: Vector3) -> void:
 	var trunk: MeshInstance3D = MeshInstance3D.new()
 	trunk.name = "TreePlaceholder"
 	var trunk_mesh: BoxMesh = BoxMesh.new()
-	trunk_mesh.size = Vector3(0.34, 1.15, 0.34)
+	trunk_mesh.size = Vector3(0.45, 1.45, 0.45)
 	trunk.mesh = trunk_mesh
-	trunk.position = Vector3(tile_position.x, 0.60, tile_position.z)
+	trunk.position = Vector3(tile_position.x, 0.75, tile_position.z)
 	trunk.material_override = marker_materials["tree_trunk"]
 	world_map.add_child(trunk)
 
 	var crown: MeshInstance3D = MeshInstance3D.new()
 	crown.name = "TreeCrownPlaceholder"
 	var crown_mesh: BoxMesh = BoxMesh.new()
-	crown_mesh.size = Vector3(1.25, 1.15, 1.25)
+	crown_mesh.size = Vector3(1.75, 1.55, 1.75)
 	crown.mesh = crown_mesh
-	crown.position = Vector3(tile_position.x, 1.45, tile_position.z)
+	crown.position = Vector3(tile_position.x, 1.90, tile_position.z)
 	crown.material_override = marker_materials["tree_crown"]
 	world_map.add_child(crown)
 
@@ -204,9 +205,9 @@ func _create_stone_placeholder(tile_position: Vector3) -> void:
 	var stone_marker: MeshInstance3D = MeshInstance3D.new()
 	stone_marker.name = "StonePlaceholder"
 	var stone_mesh: BoxMesh = BoxMesh.new()
-	stone_mesh.size = Vector3(1.15, 0.75, 0.95)
+	stone_mesh.size = Vector3(1.65, 0.95, 1.25)
 	stone_marker.mesh = stone_mesh
-	stone_marker.position = Vector3(tile_position.x, 0.42, tile_position.z)
+	stone_marker.position = Vector3(tile_position.x, 0.55, tile_position.z)
 	stone_marker.material_override = marker_materials["stone_marker"]
 	world_map.add_child(stone_marker)
 
@@ -215,9 +216,9 @@ func _create_building_placeholder(tile_position: Vector3, building_type: String)
 	var marker: MeshInstance3D = MeshInstance3D.new()
 	marker.name = "BuildingPlaceholder_%s" % building_type
 	var marker_mesh: BoxMesh = BoxMesh.new()
-	marker_mesh.size = Vector3(1.35, 1.15, 1.35)
+	marker_mesh.size = Vector3(2.2, 1.8, 2.2)
 	marker.mesh = marker_mesh
-	marker.position = Vector3(tile_position.x, 0.62, tile_position.z)
+	marker.position = Vector3(tile_position.x, 0.95, tile_position.z)
 	marker.material_override = marker_materials["building_marker"]
 	world_map.add_child(marker)
 
@@ -231,7 +232,7 @@ func _update_village_center_from_world_data() -> void:
 		return
 	var center_coords: Vector2i = center_coords_value as Vector2i
 	var center_position: Vector3 = _axial_to_player_world(center_coords.x, center_coords.y)
-	village_center.global_position = Vector3(center_position.x, 1.0, center_position.z)
+	village_center.global_position = Vector3(center_position.x, 1.25, center_position.z)
 
 
 func _place_player_near_village_center_if_needed() -> void:
@@ -251,6 +252,27 @@ func _axial_to_player_world(q: int, r: int) -> Vector3:
 	var x_position: float = world_hex_size * sqrt(3.0) * (float(q) + float(r) * 0.5)
 	var z_position: float = world_hex_size * 1.5 * float(r)
 	return Vector3(x_position, 0.0, z_position)
+
+
+func _create_forest_placeholders(tile_position: Vector3) -> void:
+	var offsets: Array[Vector3] = [
+		Vector3(-world_hex_size * 0.28, 0.0, -world_hex_size * 0.12),
+		Vector3(world_hex_size * 0.18, 0.0, -world_hex_size * 0.24),
+		Vector3(world_hex_size * 0.32, 0.0, world_hex_size * 0.16),
+		Vector3(-world_hex_size * 0.10, 0.0, world_hex_size * 0.30),
+	]
+	for offset in offsets:
+		_create_tree_placeholder(tile_position + offset)
+
+
+func _create_stone_placeholders(tile_position: Vector3) -> void:
+	var offsets: Array[Vector3] = [
+		Vector3(-world_hex_size * 0.20, 0.0, -world_hex_size * 0.10),
+		Vector3(world_hex_size * 0.18, 0.0, world_hex_size * 0.08),
+		Vector3(0.0, 0.0, world_hex_size * 0.28),
+	]
+	for offset in offsets:
+		_create_stone_placeholder(tile_position + offset)
 
 
 func _create_hex_tile_mesh() -> ArrayMesh:
